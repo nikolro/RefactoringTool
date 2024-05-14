@@ -31,8 +31,8 @@
 
         <!-- My Custom Inspection -->
         <localInspection language="JAVA"
-                         shortName="MyInspection"
-                         displayName="MyInspection"
+                         shortName="MyCustomInspection"
+                         displayName="My Custom Inspection"
                          groupPath="Java"
                          enabledByDefault="true"
                          level="WARNING"

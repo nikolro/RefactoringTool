@@ -7,6 +7,7 @@ import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.JavaElementVisitor;
 import com.intellij.psi.PsiFile;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -34,5 +35,19 @@ public class MyInspection extends AbstractBaseJavaLocalInspectionTool {
                 influenceGraph.printGraph();
             }
         };
+    }
+    @Override
+    public @NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String getGroupDisplayName() {
+        return "Java";
+    }
+
+    @Override
+    public @NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String getDisplayName() {
+        return "My Custom Inspection";
+    }
+
+    @Override
+    public @NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String getStaticDescription() {
+        return "This inspection detects specific issues and provides suggestions.";
     }
 }
