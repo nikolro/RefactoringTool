@@ -1,0 +1,41 @@
+<!-- Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license. -->
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+
+<idea-plugin>
+
+    <!-- Unique id for this plugin. Must stay constant for the life of the plugin. -->
+    <id>org.example.refactoringtool</id>
+
+    <!-- Text to display as name on Settings | Plugin page -->
+    <name>SDK: Comparing References Inspection Sample</name>
+
+    <!-- Product and plugin compatibility requirements -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.java</depends>
+
+    <!-- Text to display as company information on Settings | Plugin page -->
+    <vendor >Nikol and Marina</vendor>
+
+    <!-- Inspection registration -->
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Comparing String References Inspection -->
+        <localInspection language="JAVA"
+                         bundle="messages.InspectionBundle"
+                         key="inspection.comparing.string.references.display.name"
+                         groupPath="Java"
+                         groupBundle="messages.InspectionsBundle"
+                         groupKey="group.names.probable.bugs"
+                         enabledByDefault="true"
+                         level="WARNING"
+                         implementationClass="org.example.refactoringtool.ComparingStringReferencesInspection"/>
+
+        <!-- My Custom Inspection -->
+        <localInspection language="JAVA"
+                         shortName="MyInspection"
+                         displayName="MyInspection"
+                         groupPath="Java"
+                         enabledByDefault="true"
+                         level="WARNING"
+                         implementationClass="org.example.refactoringtool.MyInspection"/>
+        </extensions>
+</idea-plugin>
