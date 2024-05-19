@@ -10,11 +10,9 @@ import java.util.HashMap;
 
 public class InfluenceGraph {
 
-    private JavaElementVisitor visitor;
     public final Map<PsiElement,List<PsiElement>> graph;
 
-    public InfluenceGraph(JavaElementVisitor visitor) {
-        this.visitor = visitor;
+    public InfluenceGraph() {
         graph = new HashMap<>();
     }
 
@@ -44,6 +42,7 @@ public class InfluenceGraph {
         });
     }
     public void printGraph() {
+        System.out.println("******");
         for (Map.Entry<PsiElement, List<PsiElement>> entry : graph.entrySet()) {
             PsiElement key = entry.getKey();
             List<PsiElement> values = entry.getValue();
@@ -52,6 +51,7 @@ public class InfluenceGraph {
                 System.out.println("  Edge to: " + value);
             }
         }
+        System.out.println("******");
     }
 
 }

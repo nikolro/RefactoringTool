@@ -16,13 +16,15 @@ public class MyInspection extends AbstractBaseJavaLocalInspectionTool {
     private ProblemsHolder holder;
     private JavaElementVisitor visitor;
     private InfluenceGraph influenceGraph;
+    private AuxiliaryFunctions auxiliaryFunctions;
 
     @NotNull
     @Override
     public PsiElementVisitor buildVisitor(@NotNull final ProblemsHolder holder, boolean isOnTheFly) {
         this.holder = holder;
         this.visitor = createVisitor();
-        this.influenceGraph = new InfluenceGraph(visitor);
+        this.auxiliaryFunctions = new AuxiliaryFunctions();
+        this.influenceGraph = new InfluenceGraph();
         return this.visitor;
     }
 
