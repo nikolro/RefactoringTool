@@ -86,12 +86,30 @@ public class AuxiliaryFunctions {
         return false;
     }
 
-
+    // return the declaration for the expression *handle the kind of expression menthioned in figure 4*
     public PsiVariable varDecl(PsiExpression expression) {
         if (expression instanceof PsiReferenceExpression) {
             PsiElement resolvedElement = ((PsiReferenceExpression) expression).resolve();
             if (resolvedElement instanceof PsiVariable) {
                 return (PsiVariable) resolvedElement;
+            }
+        } else if (expression instanceof PsiMethodCallExpression) {
+            PsiMethodCallExpression methodCall = (PsiMethodCallExpression) expression;
+            PsiExpression qualifier = methodCall.getMethodExpression().getQualifierExpression();
+            if (qualifier instanceof PsiReferenceExpression) {
+                PsiElement resolvedElement = ((PsiReferenceExpression) qualifier).resolve();
+                if (resolvedElement instanceof PsiVariable) {
+                    return (PsiVariable) resolvedElement;
+                }
+            }
+        } else if (expression instanceof PsiNewExpression) {
+            PsiNewExpression newExpression = (PsiNewExpression) expression;
+            PsiJavaCodeReferenceElement classReference = newExpression.getClassReference();
+            if (classReference != null) {
+                PsiElement resolvedElement = classReference.resolve();
+                if (resolvedElement instanceof PsiVariable) {
+                    return (PsiVariable) resolvedElement;
+                }
             }
         }
         return null;

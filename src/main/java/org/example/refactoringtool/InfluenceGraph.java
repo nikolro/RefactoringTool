@@ -20,9 +20,14 @@ public class InfluenceGraph {
         graph.putIfAbsent(element,new ArrayList<>());
     }
 
-    public void  addEdge(PsiElement from, PsiElement to) {
+    public void addEdge(PsiElement from, PsiElement to) {
+        // Ensure both nodes are in the graph
+        graph.putIfAbsent(from, new ArrayList<>());
+        graph.putIfAbsent(to, new ArrayList<>());
+        // Add the edge
         graph.get(from).add(to);
     }
+
     private boolean isDeclaration(PsiElement element) {
         return element instanceof PsiMethod ||
                 element instanceof PsiField ||
