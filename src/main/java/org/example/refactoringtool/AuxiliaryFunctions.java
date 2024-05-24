@@ -1,5 +1,4 @@
 // the implementation of the Auxiliary Functions in Figure 5 in the paper used in the other sections.
-
 package org.example.refactoringtool;
 
 import com.intellij.psi.*;

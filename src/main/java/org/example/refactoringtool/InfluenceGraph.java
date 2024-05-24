@@ -3,17 +3,17 @@
 package org.example.refactoringtool;
 
 import com.intellij.psi.*;
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.HashMap;
+
+import java.util.*;
 
 public class InfluenceGraph {
 
-    public final Map<PsiElement,List<PsiElement>> graph;
+    private final Map<PsiElement,List<PsiElement>> graph;
+    private final Set<PsiElement> nonRewritableDeclarations;
 
     public InfluenceGraph() {
         graph = new HashMap<>();
+        nonRewritableDeclarations=new HashSet<>();
     }
 
     public void addNode(PsiElement element) {
@@ -31,27 +31,42 @@ public class InfluenceGraph {
     private boolean isDeclaration(PsiElement element) {
         return element instanceof PsiMethod ||
                 element instanceof PsiField ||
-                element instanceof PsiVariable ||
+                element instanceof PsiLocalVariable ||
                 element instanceof PsiParameter;
     }
-
-    public void processDeclarations(PsiElement root) {
-        root.accept(new JavaRecursiveElementVisitor() {
-            @Override
-            public void visitElement(PsiElement element) {
-                super.visitElement(element);
-                if (isDeclaration(element)) {
-                    addNode(element);
-                }
-            }
-        });
+    public void markNonRewritable(PsiElement element) {
+        nonRewritableDeclarations.add(element);
     }
-    public void printGraph() {
-        System.out.println("******");
+
+    public boolean isNonRewritable(PsiElement element) {
+        return nonRewritableDeclarations.contains(element);
+    }
+
+    public Set<PsiElement> getNonRewritableDeclarations() {
+        return nonRewritableDeclarations;
+    }
+
+    public List<PsiElement> getInfluencedElements(PsiElement element) {
+        return graph.get(element);
+    }
+    public List<PsiElement> getInfluencingElements(PsiElement element) {
+        List<PsiElement> influencingElements = new ArrayList<>();
         for (Map.Entry<PsiElement, List<PsiElement>> entry : graph.entrySet()) {
             PsiElement key = entry.getKey();
             List<PsiElement> values = entry.getValue();
-            System.out.println("Node: " + key);
+            if (values.contains(element)) {
+                influencingElements.add(key);
+            }
+        }
+        return influencingElements;
+    }
+
+    public void printGraph() {
+        System.out.println("****** Influence Graph ******");
+        for (Map.Entry<PsiElement, List<PsiElement>> entry : graph.entrySet()) {
+            PsiElement key = entry.getKey();
+            List<PsiElement> values = entry.getValue();
+            printNode(key);
             for (PsiElement value : values) {
                 System.out.println("  Edge to: " + value);
             }
@@ -59,6 +74,36 @@ public class InfluenceGraph {
         System.out.println("******");
     }
 
+    public void printNode(PsiElement element)
+    {
+        if(element instanceof PsiMethod){
+            System.out.println("PsiMethod: "+ ((PsiMethod) element).getName());
+        }
+        else if(element instanceof PsiField) {
+            System.out.println("PsiField: "+ ((PsiField) element).getName());
+        }
+        else if(element instanceof PsiParameter) {
+            System.out.println("PsiParameter: "+ ((PsiParameter) element).getText());
+        }
+        else if(element instanceof PsiLocalVariable) {
+            System.out.println("PsiLocalVariable: "+ ((PsiLocalVariable) element).getName());
+        }
+        else
+        {
+            System.out.println("Node is not declaration");
+            System.out.println(element.toString());
+        }
+
+    }
+
+    public void printNonRewritableDeclarations() {
+        System.out.println("****** Non-rewritable Declarations ******");
+        for (PsiElement element : getNonRewritableDeclarations()) {
+            System.out.println("Non-rewritable: ");
+            printNode(element);
+        }
+        System.out.println("*****************************************");
+    }
 }
 
 

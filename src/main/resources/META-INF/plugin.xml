@@ -18,17 +18,6 @@
 
     <!-- Inspection registration -->
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Comparing String References Inspection -->
-        <localInspection language="JAVA"
-                         bundle="messages.InspectionBundle"
-                         key="inspection.comparing.string.references.display.name"
-                         groupPath="Java"
-                         groupBundle="messages.InspectionsBundle"
-                         groupKey="group.names.probable.bugs"
-                         enabledByDefault="true"
-                         level="WARNING"
-                         implementationClass="org.example.refactoringtool.ComparingStringReferencesInspection"/>
-
         <!-- My Custom Inspection -->
         <localInspection language="JAVA"
                          shortName="MyInspection"

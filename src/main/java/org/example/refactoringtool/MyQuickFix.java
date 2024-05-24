@@ -4,10 +4,17 @@ import com.intellij.codeInspection.LocalQuickFix;
 import com.intellij.codeInspection.ProblemDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
-import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 
+// MyQuickFix.java
 public class MyQuickFix implements LocalQuickFix {
+    private PsiElement declaration;
+    private PsiType refactoredType;
+
+    public MyQuickFix(PsiElement declaration, PsiType refactoredType) {
+        this.declaration = declaration;
+        this.refactoredType = refactoredType;
+    }
 
     @Override
     public @NotNull String getName() {
@@ -19,39 +26,19 @@ public class MyQuickFix implements LocalQuickFix {
         return "Refactoring";
     }
 
+
     @Override
     public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor descriptor) {
-        PsiElement element = descriptor.getPsiElement();
-        if (element instanceof PsiMethod) {
-            PsiMethod method = (PsiMethod) element;
-            refactorMethod(method);
+        if (declaration instanceof PsiVariable) {
+            //((PsiVariable) declaration).setType(refactoredType);
+        } else if (declaration instanceof PsiMethod) {
+            ((PsiMethod) declaration).getReturnTypeElement().replace(createTypeElement(project, refactoredType));
         }
     }
 
-    private void refactorMethod(PsiMethod method) {
-        PsiParameterList parameterList = method.getParameterList();
-        PsiParameter[] parameters = parameterList.getParameters();
-        PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(method.getProject());
-
-        for (PsiParameter parameter : parameters) {
-            PsiType parameterType = parameter.getType();
-            if (parameterType instanceof PsiClassType) {
-                PsiClassType classType = (PsiClassType) parameterType;
-                if (!classType.hasParameters()) {
-                    continue;
-                }
-
-                // Create a wildcard type: "? extends Type"
-                PsiType[] typeArguments = classType.getParameters();
-                PsiType wildcardType = PsiWildcardType.createExtends(method.getManager(), typeArguments[0]);
-
-                // Replace the parameter type with the wildcard type
-                PsiTypeElement newTypeElement = elementFactory.createTypeElementFromText(
-                        classType.rawType().getCanonicalText() + "<" + wildcardType.getCanonicalText() + ">", null);
-                parameter.getTypeElement().replace(newTypeElement);
-            }
-        }
+    private PsiTypeElement createTypeElement(Project project, PsiType type) {
+        JavaPsiFacade psiFacade = JavaPsiFacade.getInstance(project);
+        PsiElementFactory elementFactory = psiFacade.getElementFactory();
+        return elementFactory.createTypeElement(type);
     }
 }
-
-
