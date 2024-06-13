@@ -52,8 +52,8 @@ public class MyInspection extends AbstractBaseJavaLocalInspectionTool {
                 analysis4_6.analyze(file);
                 methodBodyAnalysis.analyze(file);
                 definitionSiteVariance.printMap();
-                //influenceGraph.printGraph();
-                //influenceGraph.printNonRewritableDeclarations();
+                influenceGraph.printGraph();
+                influenceGraph.printNonRewritableDeclarations();
                 //generateSuggestions();
             }
         };
