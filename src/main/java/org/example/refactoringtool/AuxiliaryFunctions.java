@@ -11,7 +11,7 @@ import java.util.Set;
 public class AuxiliaryFunctions {
 
     //takes a method call and return the method declaration
-    public PsiMethod Lookup(PsiMethodCallExpression expression) {
+    public static PsiMethod Lookup(PsiMethodCallExpression expression) {
         return expression.resolveMethod();
     }
 
