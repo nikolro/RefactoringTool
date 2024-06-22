@@ -110,7 +110,7 @@ public class DefinitionSiteVariance {
                 for (PsiTypeParameter typeParameter : containingClass.getTypeParameters()) {
                     Dvar dvar = findDvar(typeParameter);
                     if (dvar != null) {
-                        //methodBodyAnalysis.analyzeMethodBody(method, dvar); // Analyze method body
+                        methodBodyAnalysis.analyzeMethodBody(method, dvar); // Analyze method body
                         // TODO: remove
                         System.out.printf("Analyzed method body for method: %s%n", method.getName());
                     }
@@ -464,6 +464,10 @@ public class DefinitionSiteVariance {
             return v2;
         }
         if (v2 == Variance.BIVARIANT) {
+            return v1;
+        }
+        if (v1 == v2)
+        {
             return v1;
         }
         return Variance.INVARIANT;
