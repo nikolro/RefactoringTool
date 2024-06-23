@@ -317,7 +317,7 @@ public class DefinitionSiteVariance {
 
                     // in case of external generic, the var will be always covariant, therfor we put it in that way
                     Dvar external_dvar = findDvarByTypeParameterAndClass (typeParameter, ownerClass);
-                    Constraint constraint_internal = new Constraint(dvar, variance, external_dvar, wild_card_var, Variance.NONE, null);
+                    Constraint constraint_internal = new Constraint(dvar, variance, external_dvar, wild_card_var, Variance.NONE, parameter);
                     constraints_list.add(constraint_internal);
                 }
                 else {
@@ -356,7 +356,6 @@ public class DefinitionSiteVariance {
         }
     }
 
-    // this is the var function:
     private void analyzeMethodSignature(PsiMethod method, Dvar dvar) {
 
         PsiType returnType = method.getReturnType();
@@ -382,6 +381,7 @@ public class DefinitionSiteVariance {
             System.out.print("Variance: " + dvar.var.toString() + ", ");
             System.out.printf("%n");
         }
+        System.out.println("****** Definition-site variances for externals ******");
         for (Dvar dvar : dvars_external_list) {
             System.out.print("Class: " + dvar.ownerClass.getQualifiedName() + ", ");
             System.out.print("Type parameter: " + dvar.typeParameter.getName() + ", ");
@@ -419,7 +419,7 @@ public class DefinitionSiteVariance {
         }
     }
 
-    private Variance transform (Variance v1, Variance v2) {
+    public Variance transform (Variance v1, Variance v2) {
         if (v1 == Variance.BIVARIANT || v2 == Variance.BIVARIANT) {
             return Variance.BIVARIANT;
         }

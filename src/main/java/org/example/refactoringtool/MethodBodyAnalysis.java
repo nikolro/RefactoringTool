@@ -173,22 +173,41 @@ class MethodBodyAnalysis {
             public void visitReferenceExpression(PsiReferenceExpression expression) {
                 super.visitReferenceExpression(expression);
                 PsiElement qualifierElement = getQualifierElement (expression);
-                //PsiMethod enclosingMethod = enclosingMethod(qualifierElement);
 
                 // Check if this is a field read
                 PsiElement resolvedElement = expression.resolve();
-                PsiMethod enclosingMethod = enclosingMethod(resolvedElement);
-                if (!isWriteTarget(expression)) {
-                    PsiField field = (PsiField) resolvedElement;
+                PsiType type = LookupType (resolvedElement);
+                PsiMethod enclosingMethod = enclosingMethod(qualifierElement);
 
+                if (resolvedElement instanceof PsiField && enclosingMethod != null && enclosingMethod.equals(method)) {
+                    DefinitionSiteVariance.Variance var = simpleVarCalc(type, dvar.typeParameter);
+                    if (!isWriteTarget(expression) )
+                    {
+                        for (DefinitionSiteVariance.Constraint constraint : constraints_list) {
+                            if (constraint.dvar.equals(dvar) && constraint.parameter != null && constraint.parameter.equals(qualifierElement)) {
+                                if (constraint.uvar == DefinitionSiteVariance.Variance.NONE) {
+                                    constraint.uvar = var;
+                                    ;
+                                } else {
+                                    constraint.uvar = definitionSiteVariance.meet(constraint.uvar, var);
+                                }
 
+                            }
+                        }
+                    }
+                    else // field write
+                    {
+                        for (DefinitionSiteVariance.Constraint constraint : constraints_list) {
+                            if (constraint.dvar.equals(dvar) && constraint.parameter != null && constraint.parameter.equals(qualifierElement)) {
+                                if (constraint.uvar == DefinitionSiteVariance.Variance.NONE) {
+                                    constraint.uvar = definitionSiteVariance.transform (DefinitionSiteVariance.Variance.CONTRAVARIANT, var);
+                                } else {
+                                    constraint.uvar = definitionSiteVariance.meet(constraint.uvar,  definitionSiteVariance.transform (DefinitionSiteVariance.Variance.CONTRAVARIANT, var));
+                                }
 
-                    //if (containingClass != null && isFieldAccessibleFromTypeParameter(containingClass, dvar)) {
-                      //  PsiMethod enclosingMethod = enclosingMethod(expression);
-                     //   if (enclosingMethod != null && enclosingMethod.equals(method)) {
-                          //  updateConstraintWithUvar(dvar, field, DefinitionSiteVariance.Variance.COVARIANT, null);
-                     //   }
-                //    }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -196,17 +215,20 @@ class MethodBodyAnalysis {
             @Override
             public void visitMethodCallExpression(PsiMethodCallExpression expression) {
                 super.visitMethodCallExpression(expression);
+                PsiElement qualifierElement = getQualifierElement(expression);
+                PsiMethod enclosingMethod = enclosingMethod(qualifierElement);
 
                 PsiMethod calledMethod = AuxiliaryFunctions.Lookup (expression);
+
                 if (calledMethod != null) {
-                    PsiElement qualifierElement = getQualifierElement(expression);
-                    PsiMethod enclosingMethod = enclosingMethod(qualifierElement);
+
                     PsiClass containingClass = calledMethod.getContainingClass();
 
                     // we are so sorry. We really did try. It shouldn't be like this. Nothing should be like this...
                     for (DefinitionSiteVariance.Constraint constraint : constraints_list) {
-                        if (constraint.dvar.equals(dvar) && enclosingMethod != null && enclosingMethod.equals(method)) {
-                            String method_name = calledMethod.getName();
+                        String method_name = calledMethod.getName();
+                        if (constraint.dvar.equals(dvar) && enclosingMethod != null && enclosingMethod.equals(method) &&
+                                constraint.parameter != null && constraint.parameter.equals(qualifierElement)) {
                             if (method_name.equals("get")) // COVARIANT
                             {
                                 if (constraint.uvar == DefinitionSiteVariance.Variance.NONE)
@@ -230,64 +252,76 @@ class MethodBodyAnalysis {
                                 }
                             }
                         }
+                        else if (constraint.dvar.equals(dvar) && method_name.equals("println"))
+                        {
+                            if (constraint.uvar == DefinitionSiteVariance.Variance.NONE)
+                            {
+                                constraint.uvar =  DefinitionSiteVariance.Variance.BIVARIANT;
+                            }
+                            else
+                            {
+                                constraint.uvar = definitionSiteVariance.meet(constraint.uvar, DefinitionSiteVariance.Variance.CONTRAVARIANT);
+                            }
+                        }
                     }
                 }
             }
 
 
-            @Override
-            public void visitLocalVariable(PsiLocalVariable variable) {
-                super.visitLocalVariable(variable);
-                PsiType type = variable.getType();
-                if (type instanceof PsiClassType) {
-                    PsiClassType classType = (PsiClassType) type;
-                    PsiTypeParameter typeParameter = definitionSiteVariance.getTypeParameter(classType);
-                   // if (typeParameter != null && typeParameter.equals(dvar.typeParameter)) {
-                        PsiClass resolvedClass = classType.resolve();
-                     //   if (resolvedClass != null) {
-                   //         updateConstraintWithUvar(dvar, null, DefinitionSiteVariance.Variance.COVARIANT, null);
-                      //  }
-                  //  }
-                }
-            }
+//            @Override
+//            public void visitLocalVariable(PsiLocalVariable variable) {
+//                super.visitLocalVariable(variable);
+//                PsiType type = variable.getType();
+//                if (type instanceof PsiClassType) {
+//                    PsiClassType classType = (PsiClassType) type;
+//                    PsiTypeParameter typeParameter = definitionSiteVariance.getTypeParameter(classType);
+//                   // if (typeParameter != null && typeParameter.equals(dvar.typeParameter)) {
+//                        PsiClass resolvedClass = classType.resolve();
+//                     //   if (resolvedClass != null) {
+//                   //         updateConstraintWithUvar(dvar, null, DefinitionSiteVariance.Variance.COVARIANT, null);
+//                      //  }
+//                  //  }
+//                }
+//            }
 
 
-            @Override
-            public void visitReturnStatement(PsiReturnStatement statement) {
-                super.visitReturnStatement(statement);
-                PsiExpression returnValue = statement.getReturnValue();
-                if (returnValue != null) {
-                    PsiType returnType = returnValue.getType();
-                    PsiTypeParameter typeParameter = definitionSiteVariance.getTypeParameter(returnType);
-                 //   if (typeParameter != null && typeParameter.equals(dvar.typeParameter)) {
-                     //   updateConstraintWithUvar(dvar, null, DefinitionSiteVariance.Variance.COVARIANT, null);
-                  //  }
-                }
-            }
+//            @Override
+//            public void visitReturnStatement(PsiReturnStatement statement) {
+//                super.visitReturnStatement(statement);
+//                PsiExpression returnValue = statement.getReturnValue();
+//                if (returnValue != null) {
+//                    PsiType returnType = returnValue.getType();
+//                    PsiTypeParameter typeParameter = definitionSiteVariance.getTypeParameter(returnType);
+//                 //   if (typeParameter != null && typeParameter.equals(dvar.typeParameter)) {
+//                     //   updateConstraintWithUvar(dvar, null, DefinitionSiteVariance.Variance.COVARIANT, null);
+//                  //  }
+//                }
+//            }
 
-            @Override
-            public void visitAssignmentExpression(PsiAssignmentExpression expression) {
-                super.visitAssignmentExpression(expression);
-                PsiExpression lExpression = expression.getLExpression();
-                PsiExpression rExpression = expression.getRExpression();
-                if (lExpression != null && rExpression != null) {
-                    PsiType lType = lExpression.getType();
-                    PsiType rType = rExpression.getType();
-                    if (lType instanceof PsiClassType && rType instanceof PsiClassType) {
-                        PsiClassType lClassType = (PsiClassType) lType;
-                        PsiClassType rClassType = (PsiClassType) rType;
-                        PsiTypeParameter lTypeParameter = definitionSiteVariance.getTypeParameter(lClassType);
-                        PsiTypeParameter rTypeParameter = definitionSiteVariance.getTypeParameter(rClassType);
-                       // if (lTypeParameter != null && lTypeParameter.equals(dvar.typeParameter)) {
-                            //updateConstraintWithUvar(dvar, null, DefinitionSiteVariance.Variance.CONTRAVARIANT, null);
-                      //  }
-                       // if (rTypeParameter != null && rTypeParameter.equals(dvar.typeParameter)) {
-                       //     updateConstraintWithUvar(dvar, null, DefinitionSiteVariance.Variance.CONTRAVARIANT, null);
-                     //   }
-                    }
-                }
-            }
-        });
+//            @Override
+//            public void visitAssignmentExpression(PsiAssignmentExpression expression) {
+//                super.visitAssignmentExpression(expression);
+//                PsiExpression lExpression = expression.getLExpression();
+//                PsiExpression rExpression = expression.getRExpression();
+//                if (lExpression != null && rExpression != null) {
+//                    PsiType lType = lExpression.getType();
+//                    PsiType rType = rExpression.getType();
+//                    if (lType instanceof PsiClassType && rType instanceof PsiClassType) {
+//                        PsiClassType lClassType = (PsiClassType) lType;
+//                        PsiClassType rClassType = (PsiClassType) rType;
+//                        PsiTypeParameter lTypeParameter = definitionSiteVariance.getTypeParameter(lClassType);
+//                        PsiTypeParameter rTypeParameter = definitionSiteVariance.getTypeParameter(rClassType);
+//                       // if (lTypeParameter != null && lTypeParameter.equals(dvar.typeParameter)) {
+//                            //updateConstraintWithUvar(dvar, null, DefinitionSiteVariance.Variance.CONTRAVARIANT, null);
+//                      //  }
+//                       // if (rTypeParameter != null && rTypeParameter.equals(dvar.typeParameter)) {
+//                       //     updateConstraintWithUvar(dvar, null, DefinitionSiteVariance.Variance.CONTRAVARIANT, null);
+//                     //   }
+//                    }
+//                }
+//            }
+        }
+        );
     }
 
     // Method to get the qualifier element from PsiReferenceExpression
@@ -315,6 +349,24 @@ class MethodBodyAnalysis {
         }
         return null;
     }
+
+    // as I go with the code and the project, I realize more and more the mistakes we have made...
+    // This var func of course doesn't cover all the cases...
+    // but here we are...
+    private DefinitionSiteVariance.Variance simpleVarCalc (PsiType type1, PsiTypeParameter type2) {
+
+        if (type1 != null && type2 != null) {
+            if (type1.getCanonicalText().equals(type2.getName()))
+            {
+                return DefinitionSiteVariance.Variance.COVARIANT;
+            }
+            else
+            {
+                return DefinitionSiteVariance.Variance.BIVARIANT;
+            }
+        }
+        return null;
+    }
     private boolean isFieldAccessibleFromTypeParameter(PsiClass fieldClass, DefinitionSiteVariance.Dvar dvar) {
         PsiClassType[] extendsListTypes = dvar.typeParameter.getExtendsListTypes();
         if (extendsListTypes.length == 0) {
@@ -325,14 +377,12 @@ class MethodBodyAnalysis {
         return typeParameterClass != null && (fieldClass.equals(typeParameterClass) || typeParameterClass.isInheritor(fieldClass, true));
     }
 
-
-//    private void updateConstraintWithUvar(DefinitionSiteVariance.Dvar dvar, PsiField field, DefinitionSiteVariance.Variance uvar, PsiParameter resolvedParameter) {
-//        for (DefinitionSiteVariance.Constraint constraint : constraints_list) {
-//            if (constraint.dvar.equals(dvar) && (resolvedParameter == null || constraint.parameter != null && constraint.parameter.equals(resolvedParameter))) {
-//                constraint.uvar = uvar;
-//            }
-//        }
-//    }
+        public PsiType LookupType(PsiElement element) {
+        if (element instanceof PsiField) {
+            return ((PsiField) element).getType();
+        }
+        return null;
+    }
 
     public boolean isWriteTarget(PsiElement element) {
         if (element.getParent() instanceof PsiAssignmentExpression) {
