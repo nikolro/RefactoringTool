@@ -6,14 +6,13 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import org.jetbrains.annotations.NotNull;
 
-// MyQuickFix.java
 public class MyQuickFix implements LocalQuickFix {
-    private PsiElement declaration;
-    private PsiType refactoredType;
+    private PsiParameter parameter;
+    private DefinitionSiteVariance.Variance joinedVariance;
 
-    public MyQuickFix(PsiElement declaration, PsiType refactoredType) {
-        this.declaration = declaration;
-        this.refactoredType = refactoredType;
+    public MyQuickFix(PsiParameter parameter, DefinitionSiteVariance.Variance joinedVariance) {
+        this.parameter = parameter;
+        this.joinedVariance = joinedVariance;
     }
 
     @Override
@@ -26,19 +25,67 @@ public class MyQuickFix implements LocalQuickFix {
         return "Refactoring";
     }
 
-
     @Override
     public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor descriptor) {
-        if (declaration instanceof PsiVariable) {
-            //((PsiVariable) declaration).setType(refactoredType);
-        } else if (declaration instanceof PsiMethod) {
-            ((PsiMethod) declaration).getReturnTypeElement().replace(createTypeElement(project, refactoredType));
+        PsiElement element = descriptor.getPsiElement();
+        if (element instanceof PsiTypeElement) {
+            PsiTypeElement typeElement = (PsiTypeElement) element;
+            PsiType parameterType = typeElement.getType();
+            if (parameterType instanceof PsiClassType) {
+                PsiClassType classType = (PsiClassType) parameterType;
+                PsiType refactoredType = createRefactoredType(project, classType, joinedVariance);
+                if (refactoredType != null) {
+                    PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
+                    PsiTypeElement newTypeElement = elementFactory.createTypeElement(refactoredType);
+                    typeElement.replace(newTypeElement);
+                }
+            }
         }
     }
 
-    private PsiTypeElement createTypeElement(Project project, PsiType type) {
-        JavaPsiFacade psiFacade = JavaPsiFacade.getInstance(project);
-        PsiElementFactory elementFactory = psiFacade.getElementFactory();
-        return elementFactory.createTypeElement(type);
+    private PsiType createRefactoredType(Project project, PsiClassType classType, DefinitionSiteVariance.Variance variance) {
+        PsiType[] typeArguments = classType.getParameters();
+        if (typeArguments.length == 0) {
+            return null;
+        }
+
+        PsiType oldTypeArgument = typeArguments[0];
+        PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
+        PsiType newTypeArgument;
+
+        if (oldTypeArgument instanceof PsiWildcardType) {
+            PsiWildcardType wildcardType = (PsiWildcardType) oldTypeArgument;
+            PsiType bound = wildcardType.getBound();
+
+            switch (variance) {
+                case COVARIANT:
+                    newTypeArgument = elementFactory.createTypeFromText("? extends " + bound.getCanonicalText(), null);
+                    break;
+                case CONTRAVARIANT:
+                    newTypeArgument = elementFactory.createTypeFromText("? super " + bound.getCanonicalText(), null);
+                    break;
+                case INVARIANT:
+                    newTypeArgument = bound;
+                    break;
+                default:
+                    newTypeArgument = elementFactory.createTypeFromText("?", null);
+            }
+        } else {
+            switch (variance) {
+                case COVARIANT:
+                    newTypeArgument = elementFactory.createTypeFromText("? extends " + oldTypeArgument.getCanonicalText(), null);
+                    break;
+                case CONTRAVARIANT:
+                    newTypeArgument = elementFactory.createTypeFromText("? super " + oldTypeArgument.getCanonicalText(), null);
+                    break;
+                case INVARIANT:
+                    newTypeArgument = oldTypeArgument;
+                    break;
+                default:
+                    newTypeArgument = elementFactory.createTypeFromText("?", null);
+            }
+        }
+
+        return elementFactory.createType(classType.resolve(), new PsiType[]{newTypeArgument});
     }
 }

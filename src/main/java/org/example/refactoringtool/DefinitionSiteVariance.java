@@ -9,7 +9,7 @@ import java.util.*;
 
 public class DefinitionSiteVariance {
 
-    class Dvar {
+    static class Dvar {
         PsiTypeParameter typeParameter;
         PsiElement element;
         PsiClass ownerClass;
@@ -28,31 +28,38 @@ public class DefinitionSiteVariance {
         }
     }
 
-    class Constraint {
+    public static class Constraint {
         Dvar dvar; // our dvar that is in the left side of the equation
         Variance var_type; // arg type or return type
         Dvar dependant_var; // the var we are dependent on
         Variance var_wilcard;  // variance to join with because of wild card
-
+        Variance uvar;
+        PsiParameter parameter; // The actual parameter name
         //dvar <= var_type *transform* (dependant_var *join* var_wildcard)
 
-        public Constraint (Dvar dvar, Variance var_type, Dvar dependant_var, Variance var_wilcard) {
+        public Constraint (Dvar dvar, Variance var_type, Dvar dependant_var, Variance var_wilcard, Variance uvar, PsiParameter parameter) {
             this.dvar = dvar;
             this.var_type = var_type;
             this.dependant_var = dependant_var;
             this.var_wilcard = var_wilcard;
+            this.uvar = uvar;
+            this.parameter = parameter;
         }
     }
     private List<Dvar> dvars_list;
+    private List<Dvar> dvars_external_list;
     private List<Constraint> constraints_list;
     private List<PsiMethod> methods_list;
     public DefinitionSiteVariance() {
         this.dvars_list = new ArrayList<>();
+        this.dvars_external_list = new ArrayList<>();
         this.constraints_list = new ArrayList<>();
         this.methods_list = new ArrayList<>();
     }
 
-
+     public List<Dvar> getDvarsList(){
+        return dvars_list ;
+     }
 
     public enum Variance {
         COVARIANT, CONTRAVARIANT, INVARIANT, BIVARIANT, NONE
@@ -75,8 +82,13 @@ public class DefinitionSiteVariance {
             public void visitMethod(PsiMethod method) {
                 super.visitMethod(method);
                 methods_list.add(method);
+
+                // Check method return type and parameters for external generics
+                checkMethodForExternalGenerics (method);
             }
         });
+
+        //MethodBodyAnalysis methodBodyAnalysis = new MethodBodyAnalysis(constraints_list, dvars_list, this);
 
         for (PsiMethod method : methods_list) {
             PsiClass containingClass = method.getContainingClass();
@@ -93,12 +105,106 @@ public class DefinitionSiteVariance {
                 }
             }
         }
+
+        for (PsiMethod method : methods_list) {
+            PsiClass containingClass = method.getContainingClass();
+            if (containingClass != null) {
+                for (PsiTypeParameter typeParameter : containingClass.getTypeParameters()) {
+                    Dvar dvar = findDvar(typeParameter);
+                    if (dvar != null) {
+                        //methodBodyAnalysis.analyzeMethodBody(method, dvar); // Analyze method body
+                        // TODO: remove
+                        System.out.printf("Analyzed method body for method: %s%n", method.getName());
+                    }
+                }
+            }
+        }
         // TODO: remove
         printConstraints();
         calculateDvarVariances();
         printConstraints();
     }
-    private Dvar findDvar(PsiTypeParameter typeParameter) {
+    private void checkMethodForExternalGenerics(PsiMethod method) {
+        // Check return type
+        PsiType returnType = method.getReturnType();
+        if (returnType != null && !"void".equals(returnType.getCanonicalText())) {
+            addGenericDvars(returnType, method);
+        }
+
+        // Check parameter types
+        for (PsiParameter parameter : method.getParameterList().getParameters()) {
+            addGenericDvars(parameter.getType(), parameter);
+        }
+    }
+    private void addGenericDvars(PsiType type, PsiElement context) {
+        if (type instanceof PsiClassType) {
+            PsiClassType classType = (PsiClassType) type;
+            PsiClass psiClass = classType.resolve();
+
+            if (psiClass != null && isExternalClass(psiClass)) {
+                // Add Dvar for the generic type itself
+                addTypeParameterDvar(classType, context);
+            }
+        }
+    }
+    private void addTypeParameterDvar(PsiClassType classType, PsiElement context) {
+        PsiClass psiClass = classType.resolve();
+        if (psiClass != null) {
+
+            // Assuming classType can only resolve to PsiTypeParameter if it's a generic type
+            for (PsiType typeArgument : classType.getParameters()) {
+                PsiTypeParameter typeParameter = getTypeParameter(typeArgument);
+
+                if (typeArgument instanceof PsiWildcardType)
+                {
+                    PsiWildcardType wildcardType = (PsiWildcardType) typeArgument;
+                    PsiType bound = wildcardType.getBound();
+
+                    if (bound != null) {
+                        if (typeParameter != null) {
+                            addTypeParameterDvarLow (psiClass, typeParameter, wildcardType, context);
+                        } else {
+                            // If it's not a type parameter, handle it as a class type
+                            addGenericDvars(bound, context);
+                        }
+                    }
+                }
+                else {
+                    addTypeParameterDvarLow (psiClass, typeParameter, null, context);
+                }
+
+            }
+        }
+    }
+
+    private void addTypeParameterDvarLow (PsiClass psiClass, PsiTypeParameter typeParameter, PsiWildcardType wildcardType, PsiElement context) {
+
+        Variance variance = Variance.INVARIANT;
+
+        if (wildcardType != null)
+        {
+            variance = checkWildcards(wildcardType);
+        }
+
+        Dvar dvar = findDvarByTypeParameterAndClass(typeParameter, psiClass);
+        if (dvar == null) {
+            variance = join(variance, Variance.INVARIANT);
+            dvar = new Dvar(typeParameter, context, psiClass, true, variance);
+            dvars_external_list.add(dvar);
+        }
+    }
+
+
+    public Dvar findDvarByTypeParameterAndClass(PsiTypeParameter typeParameter, PsiClass ownerClass) {
+        for (Dvar dvar : dvars_external_list) {
+            if (dvar.typeParameter.equals(typeParameter) && dvar.ownerClass.equals(ownerClass)) {
+                return dvar;
+            }
+        }
+        return null;
+    }
+
+    public Dvar findDvar(PsiTypeParameter typeParameter) {
         for (Dvar dvar : dvars_list) {
             if (dvar.typeParameter.equals(typeParameter)) {
                 return dvar;
@@ -107,7 +213,7 @@ public class DefinitionSiteVariance {
         return null;
     }
 
-    private PsiTypeParameter getTypeParameter(PsiType type) {
+    public PsiTypeParameter getTypeParameter(PsiType type) {
         if (type instanceof PsiClassType) {
             PsiClass psiClass = ((PsiClassType) type).resolve();
             if (psiClass instanceof PsiTypeParameter) {
@@ -135,7 +241,7 @@ public class DefinitionSiteVariance {
     }
 
     // if we can find class  name, it means PsiType is not just simply X (couldn't find better way)
-    private Boolean isGeneric (PsiType type) {
+    public Boolean isGeneric (PsiType type) {
         if (type instanceof PsiClassType) {
             PsiClass psiClass = ((PsiClassType) type).resolve();
             if (psiClass != null) {
@@ -175,7 +281,7 @@ public class DefinitionSiteVariance {
         return null;
     }
 
-    private Variance checkWildcards(PsiType type) {
+    public Variance checkWildcards(PsiType type) {
         if (type instanceof PsiWildcardType) {
             PsiWildcardType wildcardType = (PsiWildcardType) type;
             if (wildcardType.isExtends()) {
@@ -186,20 +292,20 @@ public class DefinitionSiteVariance {
                 return Variance.BIVARIANT; // General case if neither extends nor super
             }
         }
-    else if (type instanceof PsiClassType) {
-        // Check if the PsiClassType contains any wildcard parameters
-        PsiClassType classType = (PsiClassType) type;
-        for (PsiType paramType : classType.getParameters()) {
-            Variance variance = checkWildcards(paramType);
-            if (variance != Variance.INVARIANT) {
-                return variance;
+        else if (type instanceof PsiClassType) {
+            // Check if the PsiClassType contains any wildcard parameters
+            PsiClassType classType = (PsiClassType) type;
+            for (PsiType paramType : classType.getParameters()) {
+                Variance variance = checkWildcards(paramType);
+                if (variance != Variance.INVARIANT) {
+                    return variance;
+                }
             }
         }
-    }
         return Variance.INVARIANT; // Not a wildcard type, we will put invariant so it won't make any changes during join
     }
 
-    private void analyzeMethodSignatureTypes (PsiMethod method, PsiType typeToAnalyze, Dvar dvar, boolean isReturnType) {
+    private void analyzeMethodSignatureTypes (PsiMethod method, PsiType typeToAnalyze, Dvar dvar, boolean isReturnType, PsiParameter parameter) {
 
         PsiTypeParameter typeParameter = getTypeParameter(typeToAnalyze);
         Variance variance = isReturnType ? Variance.COVARIANT : Variance.CONTRAVARIANT;
@@ -210,28 +316,29 @@ public class DefinitionSiteVariance {
                 // Return type is C<X>
                 PsiClass ownerClass = getOwnerClassFromType(typeToAnalyze);
                 if (isExternalClass (ownerClass)) { //check if external class
-                    PsiElement owner = typeParameter.getOwner();
-                    Dvar external_class_dvar = new Dvar(typeParameter, owner, ownerClass, true, wild_card_var);
-                    Constraint constraint = new Constraint(dvar, variance, external_class_dvar, wild_card_var);
-                    constraints_list.add(constraint);
+
+                    // in case of external generic, the var will be always covariant, therfor we put it in that way
+                    Dvar external_dvar = findDvarByTypeParameterAndClass (typeParameter, ownerClass);
+                    Constraint constraint_internal = new Constraint(dvar, variance, external_dvar, wild_card_var, Variance.NONE, null);
+                    constraints_list.add(constraint_internal);
                 }
                 else {
                     if (ownerClass.equals(dvar.ownerClass)) // means same class
                     {
-                        Constraint constraint = new Constraint(dvar, variance, dvar, wild_card_var);
+                        Constraint constraint = new Constraint(dvar, variance, dvar, wild_card_var, Variance.NONE, parameter);
                         constraints_list.add(constraint);
                     }
                     else// go over all the dvars and search for this psiClass
                     {
                         Dvar dependant_dvar = findDvarWithOwner (ownerClass, dvars_list);
-                        Constraint constraint = new Constraint(dvar, variance, dependant_dvar, wild_card_var);
+                        Constraint constraint = new Constraint(dvar, variance, dependant_dvar, wild_card_var, Variance.NONE, parameter);
                         constraints_list.add(constraint);
                     }
                 }
             } else {
                 // Return type is exactly X
                 Dvar non_generic_dvar = dvar.copyDvar(false, Variance.COVARIANT);
-                Constraint constraint = new Constraint(dvar, variance, non_generic_dvar, wild_card_var);
+                Constraint constraint = new Constraint(dvar, variance, non_generic_dvar, wild_card_var, Variance.NONE, parameter);
                 constraints_list.add(constraint);
             }
         } else {  // TODO: finish if needed or remove
@@ -245,7 +352,7 @@ public class DefinitionSiteVariance {
 //                }
             Dvar dependantVar = findDvar(typeParameter);
             if (dependantVar != null) {
-                Constraint constraint = new Constraint(dvar, variance, dependantVar,wild_card_var);
+                Constraint constraint = new Constraint(dvar, variance, dependantVar,wild_card_var, Variance.NONE, parameter);
                 constraints_list.add(constraint);
             }
         }
@@ -258,12 +365,12 @@ public class DefinitionSiteVariance {
 
         // Analyze return type, but skip void return type
         if (returnType != null && !"void".equals(returnType.getCanonicalText())) {
-            analyzeMethodSignatureTypes (method, returnType, dvar, true);
+            analyzeMethodSignatureTypes (method, returnType, dvar, true, null);
         }
         // Analyze arg type
         for (PsiParameter parameter : method.getParameterList().getParameters()) {
-                PsiType parameterType = parameter.getType();
-            analyzeMethodSignatureTypes (method, parameterType, dvar, false);
+            PsiType parameterType = parameter.getType();
+            analyzeMethodSignatureTypes (method, parameterType, dvar, false, parameter);
         }
 
 
@@ -274,6 +381,21 @@ public class DefinitionSiteVariance {
         for (Dvar dvar : dvars_list) {
             System.out.print("Class: " + dvar.ownerClass.getQualifiedName() + ", ");
             System.out.print("Type parameter: " + dvar.typeParameter.getName() + ", ");
+            System.out.print("Variance: " + dvar.var.toString() + ", ");
+            System.out.printf("%n");
+        }
+        for (Dvar dvar : dvars_external_list) {
+            System.out.print("Class: " + dvar.ownerClass.getQualifiedName() + ", ");
+            System.out.print("Type parameter: " + dvar.typeParameter.getName() + ", ");
+            System.out.print("Variance: " + dvar.var.toString() + ", ");
+            System.out.printf("%n");
+        }
+
+        System.out.println("****** Use-site variances ******");
+        for (Constraint constraint : constraints_list) {
+            System.out.print("Class: " + constraint.dependant_var.ownerClass.getQualifiedName() + ", ");
+            System.out.print("Type parameter: " + constraint.dependant_var.typeParameter.getName() + ", ");
+            System.out.print("Variance: " + constraint.uvar.toString() + ", ");
             System.out.printf("%n");
         }
     }
@@ -287,10 +409,12 @@ public class DefinitionSiteVariance {
             System.out.print("Position (return type or arg type): " + constraint.var_type.toString() + ", ");
             System.out.printf("%n");
             System.out.print("dependant dvar : dvar(" + constraint.dependant_var.typeParameter.getName() +";"
-                            + constraint.dependant_var.ownerClass.getQualifiedName() + ")");
+                    + constraint.dependant_var.ownerClass.getQualifiedName() + ")");
             System.out.print("dependant parameter variance : " + constraint.dependant_var.var.toString() + ", ");
             System.out.printf("%n");
             System.out.print("type of wildcard (INVARIANT) if no wildcards " + constraint.var_wilcard.toString());
+            System.out.printf("%n");
+            System.out.print("type of uvar" + constraint.uvar.toString());
             System.out.printf("%n");
             System.out.println("****************");
             System.out.printf("%n");
@@ -310,7 +434,7 @@ public class DefinitionSiteVariance {
         return Variance.CONTRAVARIANT;
     }
 
-    private Variance join (Variance v1, Variance v2) {
+    public Variance join (Variance v1, Variance v2) {
         if (v1 == Variance.BIVARIANT || v2 == Variance.BIVARIANT) {
             return Variance.BIVARIANT;
         }
@@ -323,10 +447,15 @@ public class DefinitionSiteVariance {
         if (v2 == Variance.INVARIANT) {
             return v1;
         }
+        if (v1 == v2)
+        {
+            return v1;
+        }
+
         return Variance.BIVARIANT;
     }
 
-    private Variance meet(Variance v1, Variance v2) {
+    public Variance meet(Variance v1, Variance v2) {
         if (v1 == Variance.BIVARIANT && v2 == Variance.BIVARIANT) {
             return Variance.BIVARIANT;
         }
@@ -368,7 +497,11 @@ public class DefinitionSiteVariance {
         Variance result = Variance.BIVARIANT;
         for (Constraint constraint : constraints_list) {
             if (constraint.dvar.equals(dvar)) {
-                Variance transfrom_result = transform(constraint.var_type, join (constraint.dependant_var.var, constraint.var_wilcard));
+                Variance join_result = join (constraint.dependant_var.var, constraint.var_wilcard);
+                if (constraint.uvar != Variance.NONE) {
+                    join_result = join (join_result, constraint.uvar);
+                }
+                Variance transfrom_result = transform(constraint.var_type, join_result);
                 result = meet (result, transfrom_result);
             }
         }
@@ -376,4 +509,3 @@ public class DefinitionSiteVariance {
     }
 
 }
-
