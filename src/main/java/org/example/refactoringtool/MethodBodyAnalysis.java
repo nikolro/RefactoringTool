@@ -1,132 +1,210 @@
 package org.example.refactoringtool;
 
 import com.intellij.psi.*;
-import com.intellij.psi.util.PsiUtil;
+import java.util.List;
 
-public class MethodBodyAnalysis {
-    private InfluenceGraph influenceGraph;
-    private AuxiliaryFunctions auxiliaryFunctions;
+class MethodBodyAnalysis {
 
-    public enum Variance {
-        COVARIANT, CONTRAVARIANT, INVARIANT, BIVARIANT,NONE
+    private List<DefinitionSiteVariance.Constraint> constraints_list;
+    private List<DefinitionSiteVariance.Dvar> dvars_list;
+    private DefinitionSiteVariance definitionSiteVariance;
+
+    List<DefinitionSiteVariance.Constraint> getConstraints_list() {return constraints_list;}
+
+    public MethodBodyAnalysis(List<DefinitionSiteVariance.Constraint> constraints_list, List<DefinitionSiteVariance.Dvar> dvars_list, DefinitionSiteVariance definitionSiteVariance) {
+        this.constraints_list = constraints_list;
+        this.definitionSiteVariance = definitionSiteVariance;
     }
 
-    public MethodBodyAnalysis(InfluenceGraph influenceGraph, AuxiliaryFunctions auxiliaryFunctions) {
-        this.influenceGraph = influenceGraph;
-        this.auxiliaryFunctions = auxiliaryFunctions;
+    public void analyzeMethodBody(PsiMethod method, DefinitionSiteVariance.Dvar dvar) {
+        method.accept(new JavaRecursiveElementVisitor() {
+                          @Override
+                          public void visitReferenceExpression(PsiReferenceExpression expression) {
+                              super.visitReferenceExpression(expression);
+                              PsiElement qualifierElement = getQualifierElement (expression);
+
+                              // Check if this is a field read
+                              PsiElement resolvedElement = expression.resolve();
+                              PsiType type = LookupType (resolvedElement);
+                              PsiMethod enclosingMethod = enclosingMethod(qualifierElement);
+
+                              if (resolvedElement instanceof PsiField && enclosingMethod != null && enclosingMethod.equals(method)) {
+                                  DefinitionSiteVariance.Variance var = simpleVarCalc(type, dvar.typeParameter);
+                                  if (!isWriteTarget(expression) )
+                                  {
+                                      for (DefinitionSiteVariance.Constraint constraint : constraints_list) {
+                                          if (constraint.dvar.equals(dvar) && constraint.parameter != null && constraint.parameter.equals(qualifierElement)) {
+                                              if (constraint.uvar == DefinitionSiteVariance.Variance.NONE) {
+                                                  constraint.uvar = var;
+                                                  ;
+                                              } else {
+                                                  constraint.uvar = definitionSiteVariance.meet(constraint.uvar, var);
+                                              }
+
+                                          }
+                                      }
+                                  }
+                                  else // field write
+                                  {
+                                      for (DefinitionSiteVariance.Constraint constraint : constraints_list) {
+                                          if (constraint.dvar.equals(dvar) && constraint.parameter != null && constraint.parameter.equals(qualifierElement)) {
+                                              if (constraint.uvar == DefinitionSiteVariance.Variance.NONE) {
+                                                  constraint.uvar = definitionSiteVariance.transform (DefinitionSiteVariance.Variance.CONTRAVARIANT, var);
+                                              } else {
+                                                  constraint.uvar = definitionSiteVariance.meet(constraint.uvar,  definitionSiteVariance.transform (DefinitionSiteVariance.Variance.CONTRAVARIANT, var));
+                                              }
+
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                          public PsiMethod Lookup(PsiMethodCallExpression expression) {
+                              return expression.resolveMethod();
+                          }
+
+                          @Override
+                          public void visitMethodCallExpression(PsiMethodCallExpression expression) {
+                              super.visitMethodCallExpression(expression);
+                              PsiElement qualifierElement = getQualifierElement(expression);
+                              PsiMethod enclosingMethod = enclosingMethod(qualifierElement);
+
+                              PsiMethod calledMethod = Lookup (expression);
+
+                              if (calledMethod != null) {
+
+                                  PsiClass containingClass = calledMethod.getContainingClass();
+
+                                  // we are so sorry. We really did try. It shouldn't be like this. Nothing should be like this...
+                                  for (DefinitionSiteVariance.Constraint constraint : constraints_list) {
+                                      String method_name = calledMethod.getName();
+                                      if (constraint.dvar.equals(dvar) && enclosingMethod != null && enclosingMethod.equals(method) &&
+                                              constraint.parameter != null && constraint.parameter.equals(qualifierElement)) {
+                                          if (method_name.equals("get")) // COVARIANT
+                                          {
+                                              if (constraint.uvar == DefinitionSiteVariance.Variance.NONE)
+                                              {
+                                                  constraint.uvar =  DefinitionSiteVariance.Variance.COVARIANT;
+                                              }
+                                              else
+                                              {
+                                                  constraint.uvar = definitionSiteVariance.meet(constraint.uvar, DefinitionSiteVariance.Variance.COVARIANT);
+                                              }
+                                          }
+                                          else if (method_name.equals("add")) // CONTRAVARIANT
+                                          {
+                                              if (constraint.uvar == DefinitionSiteVariance.Variance.NONE)
+                                              {
+                                                  constraint.uvar =  DefinitionSiteVariance.Variance.CONTRAVARIANT;
+                                              }
+                                              else
+                                              {
+                                                  constraint.uvar = definitionSiteVariance.meet(constraint.uvar, DefinitionSiteVariance.Variance.CONTRAVARIANT);
+                                              }
+                                          }
+                                      }
+                                      else if (constraint.dvar.equals(dvar) && method_name.equals("println"))
+                                      {
+                                          if (constraint.uvar == DefinitionSiteVariance.Variance.NONE)
+                                          {
+                                              constraint.uvar =  DefinitionSiteVariance.Variance.BIVARIANT;
+                                          }
+                                          else
+                                          {
+                                              constraint.uvar = definitionSiteVariance.meet(constraint.uvar, DefinitionSiteVariance.Variance.CONTRAVARIANT);
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      }
+        );
     }
 
-    public void analyze(PsiElement root) {
-        root.accept(new JavaRecursiveElementVisitor() {
-            @Override
-            public void visitMethod(PsiMethod method) {
-                super.visitMethod(method);
-                analyzeMethodBody(method);
-            }
-        });
-    }
-
-    private void analyzeMethodBody(PsiMethod method) {
-        PsiCodeBlock body = method.getBody();
-        if (body != null) {
-            body.accept(new JavaRecursiveElementVisitor() {
-                @Override
-                public void visitReferenceExpression(PsiReferenceExpression expression) {
-                    super.visitReferenceExpression(expression);
-                    PsiElement resolved = expression.resolve();
-                    if (resolved instanceof PsiField) {
-                        PsiField field = (PsiField) resolved;
-                        if (PsiUtil.isAccessedForWriting(expression)) {
-                            // Field read (MB-FIELDREAD)
-                            // uvar(Y; C; x) v var(Y; T)
-                            applyUvarConstraint(expression, field.getType(), Variance.COVARIANT);
-                        } else {
-                            // Field write (MB-FIELDWRITE)
-                            // uvar(Y; C; x) v − ⊗ var(Y; T)
-                            applyUvarConstraint(expression, field.getType(), Variance.CONTRAVARIANT);
-                        }
-                    }
-                }
-
-                @Override
-                public void visitMethodCallExpression(PsiMethodCallExpression expression) {
-                    super.visitMethodCallExpression(expression);
-                    PsiMethod calledMethod = expression.resolveMethod();
-                    if (calledMethod != null) {
-                        // Method call (MB-METHODCALL)
-                        // uvar(Y; C; x) v u |U| i=1 ( − ⊗ var(Y; U) )
-                        // uvar(Y; T) u |T| i=1 ( − ⊗ localvar(Y; Ti; xi) )
-                        PsiParameter[] parameters = calledMethod.getParameterList().getParameters();
-                        for (PsiParameter parameter : parameters) {
-                            applyUvarConstraint(expression, parameter.getType(), Variance.CONTRAVARIANT);
-                        }
-                        applyLocalVarConstraint(expression, calledMethod.getReturnType(), Variance.COVARIANT);
-                    }
-                }
-
-                @Override
-                public void visitVariable(PsiVariable variable) {
-                    super.visitVariable(variable);
-                    PsiExpression initializer = variable.getInitializer();
-                    if (initializer != null) {
-                        // Assignment to a variable (MB-ASSIGNTOGENERIC-SAME and MB-ASSIGNTOGENERIC-BASE)
-                        // uvar(Y; C; x) v inferredUseSite(y; v; C; i)
-                        applyUvarConstraint(initializer, variable.getType(), Variance.COVARIANT);
-                    }
-                }
-
-                @Override
-                public void visitReturnStatement(PsiReturnStatement statement) {
-                    super.visitReturnStatement(statement);
-                    PsiExpression returnValue = statement.getReturnValue();
-                    if (returnValue != null) {
-                        // Return statement (MB-RETURN)
-                        // uvar(Y; C; x) v var(Y; T)
-                        applyUvarConstraint(returnValue, method.getReturnType(), Variance.COVARIANT);
-                    }
-                }
-            });
+    // Method to get the qualifier element from PsiReferenceExpression
+    private PsiElement getQualifierElement(PsiReferenceExpression expression) {
+        PsiExpression qualifierExpression = expression.getQualifierExpression();
+        if (qualifierExpression instanceof PsiReferenceExpression) {
+            return ((PsiReferenceExpression) qualifierExpression).resolve();
         }
+        return null;
     }
 
-    private void applyUvarConstraint(PsiExpression expression, PsiType type, Variance variance) {
-        if (type instanceof PsiClassType) {
-            PsiClassType classType = (PsiClassType) type;
-            PsiClass psiClass = classType.resolve();
-            if (psiClass != null) {
-                PsiTypeParameter[] typeParameters = psiClass.getTypeParameters();
-                for (int i = 0; i < typeParameters.length; i++) {
-                    PsiTypeParameter typeParameter = typeParameters[i];
-                    PsiType typeArgument = classType.getParameters()[i];
-                    // uvar(Y; C; x) v var(Y; T)
-                    // Apply the constraint based on the variance and type argument
-                    applyConstraint(expression, typeParameter, typeArgument, variance);
-                }
+
+    private PsiElement getQualifierElement(PsiMethodCallExpression expression) {
+        PsiExpression qualifierExpression = expression.getMethodExpression().getQualifierExpression();
+        if (qualifierExpression != null && qualifierExpression instanceof PsiReferenceExpression) {
+            PsiReferenceExpression referenceExpression = (PsiReferenceExpression) qualifierExpression;
+            return referenceExpression.resolve();
+        }
+        return null;
+    }
+
+    private PsiElement getResolvedElement(PsiReferenceExpression expression) {
+        if (expression != null) {
+            return expression.resolve();
+        }
+        return null;
+    }
+
+    // as I go with the code and the project, I realize more and more the mistakes we have made...
+    // This var func of course doesn't cover all the cases...
+    // but here we are...
+    private DefinitionSiteVariance.Variance simpleVarCalc (PsiType type1, PsiTypeParameter type2) {
+
+        if (type1 != null && type2 != null) {
+            if (type1.getCanonicalText().equals(type2.getName()))
+            {
+                return DefinitionSiteVariance.Variance.COVARIANT;
+            }
+            else
+            {
+                return DefinitionSiteVariance.Variance.BIVARIANT;
             }
         }
+        return null;
     }
-
-    private void applyLocalVarConstraint(PsiExpression expression, PsiType type, Variance variance) {
-        if (type instanceof PsiClassType) {
-            PsiClassType classType = (PsiClassType) type;
-            PsiClass psiClass = classType.resolve();
-            if (psiClass != null) {
-                PsiTypeParameter[] typeParameters = psiClass.getTypeParameters();
-                for (int i = 0; i < typeParameters.length; i++) {
-                    PsiTypeParameter typeParameter = typeParameters[i];
-                    PsiType typeArgument = classType.getParameters()[i];
-                    // localvar(Y; T; x)
-                    // Apply the constraint based on the variance and type argument
-                    applyConstraint(expression, typeParameter, typeArgument, variance);
-                }
-            }
+    private boolean isFieldAccessibleFromTypeParameter(PsiClass fieldClass, DefinitionSiteVariance.Dvar dvar) {
+        PsiClassType[] extendsListTypes = dvar.typeParameter.getExtendsListTypes();
+        if (extendsListTypes.length == 0) {
+            return false;
         }
+        PsiClassType typeParameterType = extendsListTypes[0];
+        PsiClass typeParameterClass = typeParameterType.resolve();
+        return typeParameterClass != null && (fieldClass.equals(typeParameterClass) || typeParameterClass.isInheritor(fieldClass, true));
     }
 
-    private void applyConstraint(PsiExpression expression, PsiTypeParameter typeParameter, PsiType typeArgument, Variance variance) {
-        // Apply the constraint based on the variance and type argument
-        // You can use the influenceGraph to add edges or constraints as needed
-        // For example:
-        // influenceGraph.addConstraint(typeParameter, typeArgument, variance);
+    public PsiType LookupType(PsiElement element) {
+        if (element instanceof PsiField) {
+            return ((PsiField) element).getType();
+        }
+        return null;
     }
+
+    public boolean isWriteTarget(PsiElement element) {
+        if (element.getParent() instanceof PsiAssignmentExpression) {
+            PsiAssignmentExpression assignmentExpression = (PsiAssignmentExpression) element.getParent();
+            return assignmentExpression.getLExpression() == element;
+        }
+        return false;
+    }
+
+    public PsiMethod enclosingMethod(PsiElement element) {
+        while (element != null && !(element instanceof PsiFile)) {
+            if (element instanceof PsiMethod) {
+                return (PsiMethod) element;
+            }
+            element = element.getParent();
+        }
+        return null;
+    }
+
+
+    private PsiTypeParameter[] getTypeParameters(PsiMethod method) {
+        return method.getTypeParameters();
+    }
+    private PsiType getReturnType(PsiMethod method) {
+        return method.getReturnType();
+    }
+
 }

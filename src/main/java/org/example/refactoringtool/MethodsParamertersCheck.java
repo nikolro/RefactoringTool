@@ -57,21 +57,40 @@ public class MethodsParamertersCheck {
                             }
                         }
                         if (matchesPattern) {
-                            for (DefinitionSiteVariance.Dvar dvar : definitionSiteVariance.getDvarsList()) {
-                                PsiClass resolvedOuterClass=null;
-                                if (parameterType instanceof PsiClassType) {
-                                    PsiClassType classType1 = (PsiClassType) parameterType;
-                                    resolvedOuterClass = classType1.resolve();
+                            PsiClass resolvedOuterClass = null;
+                            if (parameterType instanceof PsiClassType) {
+                                PsiClassType classType1 = (PsiClassType) parameterType;
+                                resolvedOuterClass = classType1.resolve();
+                            }
+
+                            if (resolvedOuterClass != null && isExternalClass(resolvedOuterClass)) {
+                                for (DefinitionSiteVariance.Constraint constraint : definitionSiteVariance.getConstraints_list()) {
+                                    if (resolvedOuterClass != null && resolvedOuterClass.equals(constraint.dependant_var.ownerClass)) {
+                                        DefinitionSiteVariance.Variance new_var = join(var, constraint.uvar);
+                                        if (new_var != var) {
+                                            String message = "Consider changing the parameter " + parameter.getName() +
+                                                    " in method " + method.getName() + " to use a more specific type.";
+                                            PsiElement typeElement = parameter.getTypeElement();
+                                            if (typeElement != null) {
+                                                holder.registerProblem(typeElement, message, new MyQuickFix(parameter, new_var));
+                                            }
+                                        }
+                                    }
                                 }
 
-                                if (resolvedOuterClass != null && resolvedOuterClass.equals(dvar.ownerClass)) {
-                                    DefinitionSiteVariance.Variance new_var = join(var, dvar.var);
-                                    if(new_var!=var) {
-                                        String message = "Consider changing the parameter " + parameter.getName() +
-                                                " in method " + method.getName() + " to use a more specific type.";
-                                        PsiElement typeElement = parameter.getTypeElement();
-                                        if (typeElement != null) {
-                                            holder.registerProblem(typeElement, message, new MyQuickFix(parameter, new_var));
+
+                            } else {
+                                // Existing logic for non-external classes
+                                for (DefinitionSiteVariance.Dvar dvar : definitionSiteVariance.getDvarsList()) {
+                                    if (resolvedOuterClass != null && resolvedOuterClass.equals(dvar.ownerClass)) {
+                                        DefinitionSiteVariance.Variance new_var = join(var, dvar.var);
+                                        if (new_var != var) {
+                                            String message = "Consider changing the parameter " + parameter.getName() +
+                                                    " in method " + method.getName() + " to use a more specific type.";
+                                            PsiElement typeElement = parameter.getTypeElement();
+                                            if (typeElement != null) {
+                                                holder.registerProblem(typeElement, message, new MyQuickFix(parameter, new_var));
+                                            }
                                         }
                                     }
                                 }
@@ -82,6 +101,19 @@ public class MethodsParamertersCheck {
             }
         });
     }
+
+    // Helper method to check if a class is external
+    private boolean isExternalClass(PsiClass psiClass) {
+        if (psiClass != null) {
+            String qualifiedName = psiClass.getQualifiedName();
+            if (qualifiedName != null) {
+                // Check if the class is part of the Java standard library or other external libraries
+                return qualifiedName.startsWith("java.") || qualifiedName.startsWith("javax.");
+            }
+        }
+        return false;
+    }
+
     public DefinitionSiteVariance.Variance join (DefinitionSiteVariance.Variance v1, DefinitionSiteVariance.Variance v2) {
         if (v1 == DefinitionSiteVariance.Variance.BIVARIANT || v2 == DefinitionSiteVariance.Variance.BIVARIANT) {
             return DefinitionSiteVariance.Variance.BIVARIANT;

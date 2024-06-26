@@ -18,6 +18,7 @@ public class MyInspection extends AbstractBaseJavaLocalInspectionTool {
     private DependenciesfromInheritance analysis4_4;
     private NonRewritableOverrides analysis4_6;
     private MethodsParamertersCheck methodsParamertersCheck;
+    private MethodBodyAnalysis methodBodyAnalysis;
 
     @NotNull
     @Override
@@ -42,10 +43,12 @@ public class MyInspection extends AbstractBaseJavaLocalInspectionTool {
                 super.visitFile(file);
                 definitionSiteVariance.analyze(file);
                 methodsParamertersCheck.analyze(file);
-                analysis4_2.analyze(file);
-                analysis4_3.analyze(file);
-                analysis4_4.analyze(file);
-                analysis4_6.analyze(file);
+                definitionSiteVariance.printMap();
+//                analysis4_2.analyze(file);
+//                analysis4_3.analyze(file);
+//                analysis4_4.analyze(file);
+//                analysis4_6.analyze(file);
+//                influenceGraph.printGraph();
             }
         };
     }

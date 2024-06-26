@@ -21,11 +21,55 @@ public class InfluenceGraph {
     }
 
     public void addEdge(PsiElement from, PsiElement to) {
-        // Ensure both nodes are in the graph
-        graph.putIfAbsent(from, new ArrayList<>());
-        graph.putIfAbsent(to, new ArrayList<>());
-        // Add the edge
-        graph.get(from).add(to);
+        if (isMethodParamWithTypeParameter(from) && isMethodParamWithTypeParameter(to)) {
+            // Ensure both nodes are in the graph
+            graph.putIfAbsent(from, new ArrayList<>());
+            graph.putIfAbsent(to, new ArrayList<>());
+            // Add the edge
+            graph.get(from).add(to);
+        }
+    }
+
+    private boolean isMethodParamWithTypeParameter(PsiElement element) {
+        if (element instanceof PsiParameter) {
+            PsiParameter param = (PsiParameter) element;
+            PsiType paramType = param.getType();
+
+            // Check if the parameter type uses type parameters
+            return usesTypeParameter(paramType);
+        }
+        return false;
+    }
+
+    private boolean usesTypeParameter(PsiType type) {
+        if (type instanceof PsiClassType) {
+            PsiClassType classType = (PsiClassType) type;
+            PsiType[] typeArguments = classType.getParameters();
+
+            // Check if any of the type arguments are type parameters
+            for (PsiType typeArg : typeArguments) {
+                if (typeArg instanceof PsiTypeParameter) {
+                    return true;
+                }
+                // Recursively check nested types
+                if (usesTypeParameter(typeArg)) {
+                    return true;
+                }
+            }
+
+            // Check if the type itself is a type parameter
+            PsiClass resolvedClass = classType.resolve();
+            return resolvedClass instanceof PsiTypeParameter;
+        } else if (type instanceof PsiArrayType) {
+            // Check array component type
+            return usesTypeParameter(((PsiArrayType) type).getComponentType());
+        } else if (type instanceof PsiWildcardType) {
+            // Check wildcard bound
+            PsiType bound = ((PsiWildcardType) type).getBound();
+            return bound != null && usesTypeParameter(bound);
+        }
+
+        return false;
     }
 
     private boolean isDeclaration(PsiElement element) {

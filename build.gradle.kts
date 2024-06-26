@@ -9,16 +9,20 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    maven("https://www.jetbrains.com/intellij-repository/releases")
+}
+
+dependencies {
+    testImplementation("junit:junit:4.13.2")
 }
 
 intellij {
-    version.set("2023.2.5")
-    type.set("IC") // Target IDE Platform
-    plugins.set(listOf("java")) // Add 'java' plugin as a dependency
+    version.set("2023.3.3")
+    type.set("IC")
+    plugins.set(listOf("java"))
 }
 
 tasks {
-    // Set the JVM compatibility versions
     withType<JavaCompile> {
         sourceCompatibility = "17"
         targetCompatibility = "17"
@@ -27,18 +31,45 @@ tasks {
         kotlinOptions.jvmTarget = "17"
     }
 
-    patchPluginXml {
-        sinceBuild.set("232")
-        untilBuild.set("242.*")
+    test {
+        useJUnit()
+        testLogging {
+            events(org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED)
+            exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+            showStandardStreams = true
+        }
     }
 
-    signPlugin {
-        certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
-        privateKey.set(System.getenv("PRIVATE_KEY"))
-        password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
+    processTestResources {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+        from("src/test/resources") {
+            include("**/*.java")
+        }
     }
 
-    publishPlugin {
-        token.set(System.getenv("PUBLISH_TOKEN"))
+    val createClasspathIndex by registering {
+        val outputFile = file("build/classes/java/test/classpath.index")
+        outputs.file(outputFile)
+        doLast {
+            outputFile.parentFile.mkdirs()
+            outputFile.createNewFile()
+        }
+    }
+
+    named<JavaCompile>("compileTestJava") {
+        dependsOn(processTestResources, createClasspathIndex)
+    }
+
+    named("classpathIndexCleanup") {
+        dependsOn(createClasspathIndex, processTestResources)
+        mustRunAfter(compileTestJava)
+    }
+
+    named("instrumentTestCode") {
+        // This task is provided by the IntelliJ plugin
+    }
+
+    test {
+        dependsOn(compileTestJava, createClasspathIndex, named("classpathIndexCleanup"), named("instrumentTestCode"))
     }
 }

@@ -1,9 +1,6 @@
 package org.example.refactoringtool;
 
 import com.intellij.psi.*;
-import com.intellij.psi.search.LocalSearchScope;
-import com.intellij.psi.search.searches.ReferencesSearch;
-import com.intellij.util.Query;
 
 import java.util.*;
 
@@ -57,9 +54,14 @@ public class DefinitionSiteVariance {
         this.methods_list = new ArrayList<>();
     }
 
-     public List<Dvar> getDvarsList(){
+
+    public List<Dvar> getDvarsList(){
         return dvars_list ;
-     }
+    }
+
+    public List<Constraint> getConstraints_list() {
+        return constraints_list;
+    }
 
     public enum Variance {
         COVARIANT, CONTRAVARIANT, INVARIANT, BIVARIANT, NONE
@@ -88,7 +90,7 @@ public class DefinitionSiteVariance {
             }
         });
 
-        //MethodBodyAnalysis methodBodyAnalysis = new MethodBodyAnalysis(constraints_list, dvars_list, this);
+        MethodBodyAnalysis methodBodyAnalysis = new MethodBodyAnalysis(constraints_list, dvars_list, this);
 
         for (PsiMethod method : methods_list) {
             PsiClass containingClass = method.getContainingClass();
@@ -112,7 +114,7 @@ public class DefinitionSiteVariance {
                 for (PsiTypeParameter typeParameter : containingClass.getTypeParameters()) {
                     Dvar dvar = findDvar(typeParameter);
                     if (dvar != null) {
-                        //methodBodyAnalysis.analyzeMethodBody(method, dvar); // Analyze method body
+                        methodBodyAnalysis.analyzeMethodBody(method, dvar); // Analyze method body
                         // TODO: remove
                         System.out.printf("Analyzed method body for method: %s%n", method.getName());
                     }
@@ -120,9 +122,9 @@ public class DefinitionSiteVariance {
             }
         }
         // TODO: remove
-        printConstraints();
+        //printConstraints();
         calculateDvarVariances();
-        printConstraints();
+        //printConstraints();
     }
     private void checkMethodForExternalGenerics(PsiMethod method) {
         // Check return type
@@ -136,6 +138,7 @@ public class DefinitionSiteVariance {
             addGenericDvars(parameter.getType(), parameter);
         }
     }
+
     private void addGenericDvars(PsiType type, PsiElement context) {
         if (type instanceof PsiClassType) {
             PsiClassType classType = (PsiClassType) type;
@@ -319,7 +322,7 @@ public class DefinitionSiteVariance {
 
                     // in case of external generic, the var will be always covariant, therfor we put it in that way
                     Dvar external_dvar = findDvarByTypeParameterAndClass (typeParameter, ownerClass);
-                    Constraint constraint_internal = new Constraint(dvar, variance, external_dvar, wild_card_var, Variance.NONE, null);
+                    Constraint constraint_internal = new Constraint(dvar, variance, external_dvar, wild_card_var, Variance.NONE, parameter);
                     constraints_list.add(constraint_internal);
                 }
                 else {
@@ -358,7 +361,6 @@ public class DefinitionSiteVariance {
         }
     }
 
-    // this is the var function:
     private void analyzeMethodSignature(PsiMethod method, Dvar dvar) {
 
         PsiType returnType = method.getReturnType();
@@ -384,6 +386,7 @@ public class DefinitionSiteVariance {
             System.out.print("Variance: " + dvar.var.toString() + ", ");
             System.out.printf("%n");
         }
+        System.out.println("****** Definition-site variances for externals ******");
         for (Dvar dvar : dvars_external_list) {
             System.out.print("Class: " + dvar.ownerClass.getQualifiedName() + ", ");
             System.out.print("Type parameter: " + dvar.typeParameter.getName() + ", ");
@@ -421,7 +424,7 @@ public class DefinitionSiteVariance {
         }
     }
 
-    private Variance transform (Variance v1, Variance v2) {
+    public Variance transform (Variance v1, Variance v2) {
         if (v1 == Variance.BIVARIANT || v2 == Variance.BIVARIANT) {
             return Variance.BIVARIANT;
         }
@@ -466,6 +469,10 @@ public class DefinitionSiteVariance {
             return v2;
         }
         if (v2 == Variance.BIVARIANT) {
+            return v1;
+        }
+        if (v1 == v2)
+        {
             return v1;
         }
         return Variance.INVARIANT;
