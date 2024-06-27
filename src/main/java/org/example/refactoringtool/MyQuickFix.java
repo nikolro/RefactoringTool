@@ -8,9 +8,9 @@ import org.jetbrains.annotations.NotNull;
 
 public class MyQuickFix implements LocalQuickFix {
     private PsiParameter parameter;
-    private DefinitionSiteVariance.Variance joinedVariance;
+    private FindVariances.Variance joinedVariance;
 
-    public MyQuickFix(PsiParameter parameter, DefinitionSiteVariance.Variance joinedVariance) {
+    public MyQuickFix(PsiParameter parameter, FindVariances.Variance joinedVariance) {
         this.parameter = parameter;
         this.joinedVariance = joinedVariance;
     }
@@ -43,7 +43,7 @@ public class MyQuickFix implements LocalQuickFix {
         }
     }
 
-    private PsiType createRefactoredType(Project project, PsiClassType classType, DefinitionSiteVariance.Variance variance) {
+    private PsiType createRefactoredType(Project project, PsiClassType classType, FindVariances.Variance variance) {
         PsiType[] typeArguments = classType.getParameters();
         if (typeArguments.length == 0) {
             return null;

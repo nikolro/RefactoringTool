@@ -2,7 +2,6 @@ class bechmark1 {
     class programBefore {
         class Body<X> {
             public X x = null;
-
             void foo(Body<X> bx) {
                 X element = null;
                 bx.x = element;
@@ -13,8 +12,7 @@ class bechmark1 {
     class programAfter {
         class Body<X> {
             public X x = null;
-
-            void foo(Body<?> bx) {
+            void foo(Body<? super X> bx) {
                 X element = null;
                 bx.x = element;
             }

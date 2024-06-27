@@ -3,7 +3,6 @@ class bechmark1 {
         import java.util.List;
         class BodyTestContravar<E> {
             private E elem = null;
-
             public boolean addElemTo(List<E> list) {
                 return list.add(this.elem);
             }
@@ -14,7 +13,6 @@ class bechmark1 {
         import java.util.List;
         class BodyTestContravar<E> {
             private E elem = null;
-
             public boolean addElemTo(List<? super E> list) {
                 return list.add(this.elem);
             }

@@ -22,7 +22,7 @@ class bechmark4 {
         }
 
         class D<Y> {
-            void baz(BodyTestCovar<? super Y> cx) {
+            void baz(BodyTestCovar<?> cx) {
             }
         }
     }

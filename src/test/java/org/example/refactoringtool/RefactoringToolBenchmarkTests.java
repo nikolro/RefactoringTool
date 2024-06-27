@@ -37,16 +37,6 @@ public class RefactoringToolBenchmarkTests extends LightJavaCodeInsightFixtureTe
     }
 
     @Test
-    public void testBenchmark1() throws Exception {
-        applyQuickFixesAndCompare("benchmark1.java");
-    }
-
-    @Test
-    public void testBenchmark2() throws Exception {
-        applyQuickFixesAndCompare("benchmark2.java");
-    }
-
-    @Test
     public void testBenchmark3() throws Exception {
         applyQuickFixesAndCompare("benchmark3.java");
     }

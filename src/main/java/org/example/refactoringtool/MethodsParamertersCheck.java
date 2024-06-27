@@ -4,11 +4,11 @@ import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.psi.*;
 
 public class MethodsParamertersCheck {
-    DefinitionSiteVariance definitionSiteVariance;
+    FindVariances findVariances;
     private ProblemsHolder holder;
 
-    public MethodsParamertersCheck(DefinitionSiteVariance definitionSiteVariance,ProblemsHolder holder) {
-        this.definitionSiteVariance = definitionSiteVariance;
+    public MethodsParamertersCheck(FindVariances findVariances, ProblemsHolder holder) {
+        this.findVariances = findVariances;
         this.holder = holder;
     }
 
@@ -30,13 +30,13 @@ public class MethodsParamertersCheck {
 
                         PsiType typeArgument = typeArguments[0];
                         boolean matchesPattern = false;
-                        DefinitionSiteVariance.Variance var=DefinitionSiteVariance.Variance.NONE;
+                        FindVariances.Variance var=FindVariances.Variance.NONE;
 
 
                         if (typeArgument instanceof PsiClassType) {
                             // Case 1: P<X>
                             matchesPattern = true;
-                            var= DefinitionSiteVariance.Variance.INVARIANT;
+                            var= FindVariances.Variance.INVARIANT;
                         } else if (typeArgument instanceof PsiWildcardType) {
                             PsiWildcardType wildcardType = (PsiWildcardType) typeArgument;
                             PsiType bound = wildcardType.getBound();
@@ -44,46 +44,36 @@ public class MethodsParamertersCheck {
                                 if (wildcardType.isExtends()) {
                                     // Case 2: P<? extends X>
                                     matchesPattern = true;
-                                    var= DefinitionSiteVariance.Variance.COVARIANT;
+                                    var= FindVariances.Variance.COVARIANT;
                                 } else if (wildcardType.isSuper()) {
                                     // Case 3: P<? super X>
                                     matchesPattern = true;
-                                    var= DefinitionSiteVariance.Variance.CONTRAVARIANT;
+                                    var= FindVariances.Variance.CONTRAVARIANT;
                                 }
                             } else {
                                 // Case 4: P<?>
                                 matchesPattern = true;
-                                var= DefinitionSiteVariance.Variance.BIVARIANT;
+                                var= FindVariances.Variance.BIVARIANT;
                             }
                         }
                         if (matchesPattern) {
+                            FindVariances.Variance uvar_var=FindVariances.Variance.NONE;
+                            for(FindVariances.Uvar uvar : findVariances.getUvarsList()){
+                                if(uvar.element==parameter)
+                                {
+                                    uvar_var=uvar.var;
+                                }
+                            }
                             PsiClass resolvedOuterClass = null;
                             if (parameterType instanceof PsiClassType) {
                                 PsiClassType classType1 = (PsiClassType) parameterType;
                                 resolvedOuterClass = classType1.resolve();
                             }
-
-                            if (resolvedOuterClass != null && isExternalClass(resolvedOuterClass)) {
-                                for (DefinitionSiteVariance.Constraint constraint : definitionSiteVariance.getConstraints_list()) {
-                                    if (resolvedOuterClass != null && resolvedOuterClass.equals(constraint.dependant_var.ownerClass)) {
-                                        DefinitionSiteVariance.Variance new_var = join(var, constraint.uvar);
-                                        if (new_var != var) {
-                                            String message = "Consider changing the parameter " + parameter.getName() +
-                                                    " in method " + method.getName() + " to use a more specific type.";
-                                            PsiElement typeElement = parameter.getTypeElement();
-                                            if (typeElement != null) {
-                                                holder.registerProblem(typeElement, message, new MyQuickFix(parameter, new_var));
-                                            }
-                                        }
-                                    }
-                                }
-
-
-                            } else {
                                 // Existing logic for non-external classes
-                                for (DefinitionSiteVariance.Dvar dvar : definitionSiteVariance.getDvarsList()) {
+                                for (FindVariances.Dvar dvar : findVariances.getDvarsList()) {
                                     if (resolvedOuterClass != null && resolvedOuterClass.equals(dvar.ownerClass)) {
-                                        DefinitionSiteVariance.Variance new_var = join(var, dvar.var);
+                                        FindVariances.Variance new_var1 = join(var, dvar.var);
+                                        FindVariances.Variance new_var = join(new_var1, uvar_var);
                                         if (new_var != var) {
                                             String message = "Consider changing the parameter " + parameter.getName() +
                                                     " in method " + method.getName() + " to use a more specific type.";
@@ -94,7 +84,7 @@ public class MethodsParamertersCheck {
                                         }
                                     }
                                 }
-                            }
+
                         }
                     }
                 }
@@ -114,17 +104,17 @@ public class MethodsParamertersCheck {
         return false;
     }
 
-    public DefinitionSiteVariance.Variance join (DefinitionSiteVariance.Variance v1, DefinitionSiteVariance.Variance v2) {
-        if (v1 == DefinitionSiteVariance.Variance.BIVARIANT || v2 == DefinitionSiteVariance.Variance.BIVARIANT) {
-            return DefinitionSiteVariance.Variance.BIVARIANT;
+    public FindVariances.Variance join (FindVariances.Variance v1, FindVariances.Variance v2) {
+        if (v1 == FindVariances.Variance.BIVARIANT || v2 == FindVariances.Variance.BIVARIANT) {
+            return FindVariances.Variance.BIVARIANT;
         }
-        if (v1 == DefinitionSiteVariance.Variance.INVARIANT && v2 == DefinitionSiteVariance.Variance.INVARIANT) {
-            return DefinitionSiteVariance.Variance.INVARIANT;
+        if (v1 == FindVariances.Variance.INVARIANT && v2 == FindVariances.Variance.INVARIANT) {
+            return FindVariances.Variance.INVARIANT;
         }
-        if (v1 == DefinitionSiteVariance.Variance.INVARIANT) {
+        if (v1 == FindVariances.Variance.INVARIANT) {
             return v2;
         }
-        if (v2 == DefinitionSiteVariance.Variance.INVARIANT) {
+        if (v2 == FindVariances.Variance.INVARIANT) {
             return v1;
         }
         if (v1 == v2)
@@ -132,6 +122,6 @@ public class MethodsParamertersCheck {
             return v1;
         }
 
-        return DefinitionSiteVariance.Variance.BIVARIANT;
+        return FindVariances.Variance.BIVARIANT;
     }
 }

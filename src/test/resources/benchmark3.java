@@ -1,5 +1,3 @@
-import java.util.List;
-
 class bechmark3 {
     class programBefore {
         import java.util.List;

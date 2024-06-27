@@ -1,22 +1,18 @@
 class bechmark1 {
     class programBefore {
         class Body<X> {
-            public int x = 5;
-
+            public X x = null;
             void foo(Body<X> bx) {
-
-                int y = bx.x;
+                X x1 = bx.x;
             }
         }
     }
 
     class programAfter {
         class Body<X> {
-            public int x = 5;
-
-            void foo(Body<?> bx) {
-
-                int y = bx.x;
+            public X x = null;
+            void foo(Body<? extends X> bx) {
+                X x1 = bx.x;
             }
         }
     }
