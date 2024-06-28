@@ -173,7 +173,7 @@ public class FindVariances {
             PsiClassType boundClassType = (PsiClassType) bound;
             PsiClass parameterClass = boundClassType.resolve();
 
-            if (parameterClass instanceof PsiTypeParameter) {
+            if (parameterClass instanceof PsiTypeParameter || parameterClass instanceof PsiClass) {
                 PsiTypeParameter psiTypeParameter = (PsiTypeParameter) parameterClass;
 
                 Dvar left_dvar = findSuitableDvar(declaringClass);
@@ -191,7 +191,7 @@ public class FindVariances {
     private void processClassType(PsiParameter parameter, PsiClass declaringClass, PsiClass paramClass, PsiType typeParameter, Variance variance) {
         PsiClassType parameterClassType = (PsiClassType) typeParameter;
         PsiClass parameterClass = parameterClassType.resolve();
-        if (parameterClass instanceof PsiTypeParameter) {
+        if (parameterClass instanceof PsiTypeParameter ||parameterClass instanceof PsiClass) {
             PsiTypeParameter psiTypeParameter = (PsiTypeParameter) parameterClass;
             Dvar left_dvar = findSuitableDvar(declaringClass);
             Dvar right_dvar = findSuitableDvar(paramClass);

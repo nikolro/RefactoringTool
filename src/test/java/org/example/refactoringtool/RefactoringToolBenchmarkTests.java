@@ -1,7 +1,6 @@
 package org.example.refactoringtool;
 
 import com.intellij.codeInsight.intention.IntentionAction;
-import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
@@ -11,7 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 public class RefactoringToolBenchmarkTests extends LightJavaCodeInsightFixtureTestCase {
@@ -24,9 +22,11 @@ public class RefactoringToolBenchmarkTests extends LightJavaCodeInsightFixtureTe
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+
         // Add required classes from the standard library
-        myFixture.addClass("package java.util; public interface List<T> { boolean add(T element); T get(int index); }");
-        myFixture.addClass("package java.util; public class ArrayList<T> implements List<T> { public boolean add(T element) { return true; } public T get(int index) { return null; } }");
+        myFixture.addClass("package java.util; public interface List<T> { boolean add(T element); T get(int index); Iterator<T> iterator(); }");
+        myFixture.addClass("package java.util; public interface Iterator<T> { boolean hasNext(); T next(); }");
+        myFixture.addClass("package java.util; public class ArrayList<T> implements List<T> { public boolean add(T element) { return true; } public T get(int index) { return null; } public Iterator<T> iterator() { return null; } }");
         myFixture.addClass("package java.util; public class Collections { public static <T> List<T> emptyList() { return null; } }");
 
         // Add other common utility classes if needed
@@ -34,6 +34,16 @@ public class RefactoringToolBenchmarkTests extends LightJavaCodeInsightFixtureTe
 
         // Add mock implementations or any other classes your plugin interacts with
         myFixture.addClass("package com.example; public class MyCustomClass { public void doSomething() {} }");
+    }
+
+    @Test
+    public void testBenchmark1() throws Exception {
+        applyQuickFixesAndCompare("benchmark1.java");
+    }
+
+    @Test
+    public void testBenchmark2() throws Exception {
+        applyQuickFixesAndCompare("benchmark2.java");
     }
 
     @Test
@@ -69,6 +79,11 @@ public class RefactoringToolBenchmarkTests extends LightJavaCodeInsightFixtureTe
     @Test
     public void testBenchmark9() throws Exception {
         applyQuickFixesAndCompare("benchmark9.java");
+    }
+
+    @Test
+    public void testBenchmark10() throws Exception {
+        applyQuickFixesAndCompare("benchmark10.java");
     }
 
     public void applyQuickFixesAndCompare(@NotNull String benchmarkFileName) throws Exception {

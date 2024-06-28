@@ -167,10 +167,11 @@ public class NonRewritableOverrides {
                 continue;
             }
             visited.add(current);
-            propagateNonRewritability(current, visited, toProcess);
+            //propagateNonRewritability(current, visited, toProcess);
         }
     }
 
+    /*
     private void propagateNonRewritability(PsiElement element, Set<PsiElement> visited, Queue<PsiElement> toProcess) {
         List<PsiElement> influencingElements = influenceGraph.getInfluencingElements(element);
         if (influencingElements != null) {
@@ -182,5 +183,6 @@ public class NonRewritableOverrides {
             }
         }
     }
+     */
 
 }

@@ -207,7 +207,6 @@ public class AuxiliaryFunctions {
         return parameters;
     }
 
-    // Find all nodes affecting the type of the given expression
     public Set<PsiElement> nodesAffectingType(PsiElement expression) {
         Set<PsiElement> nodes = new HashSet<>();
         if (expression instanceof PsiMethodCallExpression) {
@@ -224,6 +223,11 @@ public class AuxiliaryFunctions {
                     // N-MONOMETHOD
                     nodes.add(method);
                 }
+                // Also include the qualifier (e.g., `animals` in `animals.iterator()`)
+                PsiExpression qualifier = methodCall.getMethodExpression().getQualifierExpression();
+                if (qualifier != null) {
+                    nodes.addAll(accessedNodes(qualifier));
+                }
                 return nodes;
             }
         }
@@ -232,7 +236,6 @@ public class AuxiliaryFunctions {
         return nodes;
     }
 
-    // Find the destination node for a given expression
     public PsiElement destinationNode(PsiElement expression) {
         PsiElement parent = expression.getParent();
         if (parent instanceof PsiExpressionList && parent.getParent() instanceof PsiMethodCallExpression) {
@@ -247,31 +250,34 @@ public class AuxiliaryFunctions {
                     }
                 }
             }
-        }// Check if the expression is part of an assignment
-        else if (parent instanceof PsiAssignmentExpression) {
-            PsiAssignmentExpression assignment = (PsiAssignmentExpression) parent;
-            PsiExpression lhs = assignment.getLExpression();
-            PsiExpression rhs = assignment.getRExpression();
-
-            // If the expression is the RHS of the assignment
-            if (rhs.equals(expression)) {
-                // D-ASSIGNMENT
-                return varDecl(lhs);
-            }
-        }     // Check if the expression is the return value of a return statement
-        else if (parent instanceof PsiReturnStatement) {
+        }  else if (parent instanceof PsiReturnStatement) {
             PsiReturnStatement returnStatement = (PsiReturnStatement) parent;
             PsiExpression returnValue = returnStatement.getReturnValue();
 
-            // If the expression is the return value
             if (returnValue != null && returnValue.equals(expression)) {
                 // D-RETURN
                 return enclosingMethod(returnStatement);
             }
         }
+        else
+        {
+            PsiElement prevSibling = expression.getPrevSibling();
+            while (prevSibling instanceof PsiWhiteSpace || prevSibling instanceof PsiComment) {
+                prevSibling = prevSibling.getPrevSibling();
+            }
+            if (prevSibling instanceof PsiJavaToken) {
+                PsiJavaToken token = (PsiJavaToken) prevSibling;
+                if (token.getTokenType() == JavaTokenType.EQ) {
+                    PsiElement prevSibling1 = prevSibling.getPrevSibling();
+                    while (prevSibling1 instanceof PsiWhiteSpace || prevSibling1 instanceof PsiComment) {
+                        prevSibling1 = prevSibling1.getPrevSibling();
+                    }
+                    return prevSibling1.getParent();
+                }
+            }
+        }
         return null;
     }
-
 }
 
 

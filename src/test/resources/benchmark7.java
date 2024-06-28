@@ -1,19 +1,24 @@
+//check field write
 class bechmark7 {
+
     class programBefore {
-        class BodyTestInvar<E> {
-            public boolean readAndWrite(List<E> list) {
-                E firstElem = list.get(0);
-                return list.add(firstElem);
+        class Body<X> {
+            public X x = null;
+            void foo(Body<X> bx) {
+                X element = null;
+                bx.x = element;
             }
         }
     }
 
     class programAfter {
-        class BodyTestInvar<E> {
-            public boolean readAndWrite(List<E> list) {
-                E firstElem = list.get(0);
-                return list.add(firstElem);
+        class Body<X> {
+            public X x = null;
+            void foo(Body<? super X> bx) {
+                X element = null;
+                bx.x = element;
             }
         }
     }
+
 }

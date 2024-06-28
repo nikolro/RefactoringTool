@@ -1,4 +1,3 @@
-//the implementation of the Analysis from section 4.3
 package org.example.refactoringtool;
 
 import com.intellij.psi.*;
@@ -21,6 +20,7 @@ public class ExpressionTargets {
                 super.visitMethodCallExpression(expression);
                 processExpression(expression);
             }
+
             @Override
             public void visitReferenceExpression(PsiReferenceExpression expression) {
                 super.visitReferenceExpression(expression);

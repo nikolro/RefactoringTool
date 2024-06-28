@@ -25,13 +25,13 @@ public class MyInspection extends AbstractBaseJavaLocalInspectionTool {
     public PsiElementVisitor buildVisitor(@NotNull final ProblemsHolder holder, boolean isOnTheFly) {
         this.holder = holder;
         this.findVariances=new FindVariances();
-        this.methodsParamertersCheck =new MethodsParamertersCheck(findVariances,this.holder);
-//        this.auxiliaryFunctions = new AuxiliaryFunctions();
-//        this.influenceGraph = new InfluenceGraph();
-//        this.analysis4_2 = new FlowDependenciesfromQualifiers(influenceGraph, auxiliaryFunctions);
-//        this.analysis4_3 = new ExpressionTargets(influenceGraph, auxiliaryFunctions);
-//        this.analysis4_4 = new DependenciesfromInheritance(influenceGraph, auxiliaryFunctions);
-//        this.analysis4_6 = new NonRewritableOverrides(influenceGraph, auxiliaryFunctions);
+        this.auxiliaryFunctions = new AuxiliaryFunctions();
+        this.influenceGraph = new InfluenceGraph();
+        this.methodsParamertersCheck =new MethodsParamertersCheck(findVariances,this.holder,influenceGraph);
+        this.analysis4_2 = new FlowDependenciesfromQualifiers(influenceGraph, auxiliaryFunctions);
+        this.analysis4_3 = new ExpressionTargets(influenceGraph, auxiliaryFunctions);
+        this.analysis4_4 = new DependenciesfromInheritance(influenceGraph, auxiliaryFunctions);
+        this.analysis4_6 = new NonRewritableOverrides(influenceGraph, auxiliaryFunctions);
         this.visitor = createVisitor();
         return this.visitor;
     }
@@ -41,13 +41,13 @@ public class MyInspection extends AbstractBaseJavaLocalInspectionTool {
             @Override
             public void visitFile(PsiFile file) {
                 super.visitFile(file);
+                analysis4_2.analyze(file);
+                analysis4_3.analyze(file);
+                analysis4_4.analyze(file);
+                //analysis4_6.analyze(file);
+                influenceGraph.printGraph();
                 findVariances.analyze(file);
                 methodsParamertersCheck.analyze(file);
-//                analysis4_2.analyze(file);
-//                analysis4_3.analyze(file);
-//                analysis4_4.analyze(file);
-//                analysis4_6.analyze(file);
-//                influenceGraph.printGraph();
             }
         };
     }

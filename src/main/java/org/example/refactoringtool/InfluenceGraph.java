@@ -16,12 +16,8 @@ public class InfluenceGraph {
         nonRewritableDeclarations=new HashSet<>();
     }
 
-    public void addNode(PsiElement element) {
-        graph.putIfAbsent(element,new ArrayList<>());
-    }
-
     public void addEdge(PsiElement from, PsiElement to) {
-        if (isMethodParamWithTypeParameter(from) && isMethodParamWithTypeParameter(to)) {
+       if (isDeclarationWithTypeParameter(from) && isDeclarationWithTypeParameter(to)) {
             // Ensure both nodes are in the graph
             graph.putIfAbsent(from, new ArrayList<>());
             graph.putIfAbsent(to, new ArrayList<>());
@@ -30,45 +26,13 @@ public class InfluenceGraph {
         }
     }
 
-    private boolean isMethodParamWithTypeParameter(PsiElement element) {
-        if (element instanceof PsiParameter) {
-            PsiParameter param = (PsiParameter) element;
-            PsiType paramType = param.getType();
+    private boolean isDeclarationWithTypeParameter(PsiElement element) {
+        if (isDeclaration(element)) {
+            PsiType type = getTypeOfDeclaration(element);
 
-            // Check if the parameter type uses type parameters
-            return usesTypeParameter(paramType);
+            // Check if the declaration type uses type parameters
+            return usesTypeParameter(type);
         }
-        return false;
-    }
-
-    private boolean usesTypeParameter(PsiType type) {
-        if (type instanceof PsiClassType) {
-            PsiClassType classType = (PsiClassType) type;
-            PsiType[] typeArguments = classType.getParameters();
-
-            // Check if any of the type arguments are type parameters
-            for (PsiType typeArg : typeArguments) {
-                if (typeArg instanceof PsiTypeParameter) {
-                    return true;
-                }
-                // Recursively check nested types
-                if (usesTypeParameter(typeArg)) {
-                    return true;
-                }
-            }
-
-            // Check if the type itself is a type parameter
-            PsiClass resolvedClass = classType.resolve();
-            return resolvedClass instanceof PsiTypeParameter;
-        } else if (type instanceof PsiArrayType) {
-            // Check array component type
-            return usesTypeParameter(((PsiArrayType) type).getComponentType());
-        } else if (type instanceof PsiWildcardType) {
-            // Check wildcard bound
-            PsiType bound = ((PsiWildcardType) type).getBound();
-            return bound != null && usesTypeParameter(bound);
-        }
-
         return false;
     }
 
@@ -78,6 +42,32 @@ public class InfluenceGraph {
                 element instanceof PsiLocalVariable ||
                 element instanceof PsiParameter;
     }
+
+    private PsiType getTypeOfDeclaration(PsiElement element) {
+        if (element instanceof PsiMethod) {
+            return ((PsiMethod) element).getReturnType();
+        } else if (element instanceof PsiField) {
+            return ((PsiField) element).getType();
+        } else if (element instanceof PsiLocalVariable) {
+            return ((PsiLocalVariable) element).getType();
+        } else if (element instanceof PsiParameter) {
+            return ((PsiParameter) element).getType();
+        }
+        return null;
+    }
+
+    private boolean usesTypeParameter(PsiType type) {
+        if (type instanceof PsiClassType) {
+            PsiClassType classType = (PsiClassType) type;
+            PsiType[] typeArguments = classType.getParameters();
+
+            // Check if the class type has any type arguments
+            return typeArguments.length > 0;
+        }
+        // Array types and wildcard types are not considered to have type parameters in this context
+        return false;
+    }
+
     public void markNonRewritable(PsiElement element) {
         nonRewritableDeclarations.add(element);
     }
@@ -90,9 +80,46 @@ public class InfluenceGraph {
         return nonRewritableDeclarations;
     }
 
-    public List<PsiElement> getInfluencedElements(PsiElement element) {
-        return graph.get(element);
+    public List<PsiElement> getElement(PsiElement element) {
+        // Return the list of elements directly influenced by the given element
+        return graph.getOrDefault(element, Collections.emptyList());
     }
+
+    public List<PsiElement> getAllInfluencedElements(PsiElement element) {
+        Set<PsiElement> visited = new HashSet<>();
+        List<PsiElement> influencedElements = new ArrayList<>();
+        dfs(element, visited, influencedElements);
+        return influencedElements;
+    }
+
+    private void dfs(PsiElement element, Set<PsiElement> visited, List<PsiElement> influencedElements) {
+        if (visited.contains(element)) {
+            return;
+        }
+        visited.add(element);
+        List<PsiElement> directlyInfluenced = graph.get(element);
+        if (directlyInfluenced != null) {
+            for (PsiElement influenced : directlyInfluenced) {
+                if (!visited.contains(influenced)) {
+                    influencedElements.add(influenced);
+                    dfs(influenced, visited, influencedElements);
+                }
+            }
+        }
+    }
+
+    public List<PsiElement> getInfluencedElements(PsiElement element) {
+        List<PsiElement> influencedElements = new ArrayList<>();
+        for (Map.Entry<PsiElement, List<PsiElement>> entry : graph.entrySet()) {
+            PsiElement key = entry.getKey();
+            List<PsiElement> values = entry.getValue();
+            if (values.contains(element)) {
+                influencedElements.add(key);
+            }
+        }
+        return influencedElements;
+    }
+
     public List<PsiElement> getInfluencingElements(PsiElement element) {
         List<PsiElement> influencingElements = new ArrayList<>();
         for (Map.Entry<PsiElement, List<PsiElement>> entry : graph.entrySet()) {

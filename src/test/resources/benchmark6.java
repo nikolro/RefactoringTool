@@ -1,21 +1,22 @@
-class bechmark1 {
+//check field read
+class bechmark6 {
+
     class programBefore {
-        import java.util.List;
-        class BodyTestContravar<E> {
-            private E elem = null;
-            public boolean addElemTo(List<E> list) {
-                return list.add(this.elem);
+        class Body<X> {
+            public X x = null;
+            void foo(Body<X> bx) {
+                X x1 = bx.x;
             }
         }
     }
 
     class programAfter {
-        import java.util.List;
-        class BodyTestContravar<E> {
-            private E elem = null;
-            public boolean addElemTo(List<? super E> list) {
-                return list.add(this.elem);
+        class Body<X> {
+            public X x = null;
+            void foo(Body<? extends X> bx) {
+                X x1 = bx.x;
             }
         }
     }
+
 }

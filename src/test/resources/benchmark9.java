@@ -1,21 +1,30 @@
-class bechmark1 {
+//mix
+class bechmark9 {
+
     class programBefore {
-        class Body<X> {
-            public X x = null;
-            void foo(Body<X> bx) {
-                X element = null;
-                bx.x = element;
+        import java.util.Iterator;
+        import java.util.List;
+        class A<X>{
+            public void printElements(List<X> elements) {
+                Iterator<X> iterator = elements.iterator();
+                while (iterator.hasNext()) {
+                    System.out.println(iterator.next());
+                }
             }
         }
     }
 
     class programAfter {
-        class Body<X> {
-            public X x = null;
-            void foo(Body<? super X> bx) {
-                X element = null;
-                bx.x = element;
+        import java.util.Iterator;
+        import java.util.List;
+        class A<X>{
+            public void printElements(List<? extends X> elements) {
+                Iterator<? extends X> iterator = elements.iterator();
+                while (iterator.hasNext()) {
+                    System.out.println(iterator.next());
+                }
             }
         }
     }
+
 }

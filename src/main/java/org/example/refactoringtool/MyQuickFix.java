@@ -6,13 +6,17 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 public class MyQuickFix implements LocalQuickFix {
     private PsiParameter parameter;
     private FindVariances.Variance joinedVariance;
+    private List<PsiElement> influencedDeclarations;
 
-    public MyQuickFix(PsiParameter parameter, FindVariances.Variance joinedVariance) {
+    public MyQuickFix(PsiParameter parameter, FindVariances.Variance joinedVariance, List<PsiElement> influencedDeclarations) {
         this.parameter = parameter;
         this.joinedVariance = joinedVariance;
+        this.influencedDeclarations = influencedDeclarations;
     }
 
     @Override
@@ -29,16 +33,41 @@ public class MyQuickFix implements LocalQuickFix {
     public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor descriptor) {
         PsiElement element = descriptor.getPsiElement();
         if (element instanceof PsiTypeElement) {
-            PsiTypeElement typeElement = (PsiTypeElement) element;
-            PsiType parameterType = typeElement.getType();
-            if (parameterType instanceof PsiClassType) {
-                PsiClassType classType = (PsiClassType) parameterType;
-                PsiType refactoredType = createRefactoredType(project, classType, joinedVariance);
-                if (refactoredType != null) {
-                    PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
-                    PsiTypeElement newTypeElement = elementFactory.createTypeElement(refactoredType);
-                    typeElement.replace(newTypeElement);
+            applyRefactoring(project, (PsiTypeElement) element, joinedVariance);
+        }
+
+        for (PsiElement influencedElement : influencedDeclarations) {
+            if (influencedElement instanceof PsiParameter) {
+                PsiParameter influencedParameter = (PsiParameter) influencedElement;
+                PsiTypeElement typeElement = influencedParameter.getTypeElement();
+                if (typeElement != null) {
+                    applyRefactoring(project, typeElement, joinedVariance);
                 }
+            } else if (influencedElement instanceof PsiLocalVariable) {
+                PsiLocalVariable influencedVariable = (PsiLocalVariable) influencedElement;
+                PsiTypeElement typeElement = influencedVariable.getTypeElement();
+                if (typeElement != null) {
+                    applyRefactoring(project, typeElement, joinedVariance);
+                }
+            } else if (influencedElement instanceof PsiField) {
+                PsiField influencedField = (PsiField) influencedElement;
+                PsiTypeElement typeElement = influencedField.getTypeElement();
+                if (typeElement != null) {
+                    applyRefactoring(project, typeElement, joinedVariance);
+                }
+            }
+        }
+    }
+
+    private void applyRefactoring(@NotNull Project project, @NotNull PsiTypeElement typeElement, FindVariances.Variance variance) {
+        PsiType parameterType = typeElement.getType();
+        if (parameterType instanceof PsiClassType) {
+            PsiClassType classType = (PsiClassType) parameterType;
+            PsiType refactoredType = createRefactoredType(project, classType, variance);
+            if (refactoredType != null) {
+                PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(project);
+                PsiTypeElement newTypeElement = elementFactory.createTypeElement(refactoredType);
+                typeElement.replace(newTypeElement);
             }
         }
     }
@@ -59,10 +88,10 @@ public class MyQuickFix implements LocalQuickFix {
 
             switch (variance) {
                 case COVARIANT:
-                    newTypeArgument = elementFactory.createTypeFromText("? extends " + bound.getCanonicalText(), null);
+                    newTypeArgument = elementFactory.createTypeFromText("? extends " + (bound != null ? bound.getCanonicalText() : ""), null);
                     break;
                 case CONTRAVARIANT:
-                    newTypeArgument = elementFactory.createTypeFromText("? super " + bound.getCanonicalText(), null);
+                    newTypeArgument = elementFactory.createTypeFromText("? super " + (bound != null ? bound.getCanonicalText() : ""), null);
                     break;
                 case INVARIANT:
                     newTypeArgument = bound;

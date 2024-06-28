@@ -1,29 +1,24 @@
+//check method call with write
 class bechmark4 {
+
     class programBefore {
         import java.util.List;
-        class BodyTestCovar<E> {
-            void firstElem(List<E> list) {
-                E firstElem = list.get(0);
-            }
-        }
-
-        class D<Y> {
-            void baz(BodyTestCovar<Y> cx) {
+        class BodyTestContravar<E> {
+            private E elem = null;
+            public boolean addElemTo(List<E> list) {
+                return list.add(this.elem);
             }
         }
     }
 
     class programAfter {
         import java.util.List;
-        class BodyTestCovar<E> {
-            void firstElem(List<? extends E> list) {
-                E firstElem = list.get(0);
-            }
-        }
-
-        class D<Y> {
-            void baz(BodyTestCovar<?> cx) {
+        class BodyTestContravar<E> {
+            private E elem = null;
+            public boolean addElemTo(List<? super E> list) {
+                return list.add(this.elem);
             }
         }
     }
+
 }
