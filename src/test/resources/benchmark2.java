@@ -1,4 +1,4 @@
-//check method call with read more complex
+//check method call with read with anther class
 class bechmark2 {
 
     class programBefore {

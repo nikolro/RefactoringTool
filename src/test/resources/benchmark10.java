@@ -1,7 +1,5 @@
-import java.util.List;
-
-//check override
-class bechmark1 {
+//check override and variance analysis
+class bechmark10 {
 
     class programBefore {
 import java.util.List;

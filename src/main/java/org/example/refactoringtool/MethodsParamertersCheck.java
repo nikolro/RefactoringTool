@@ -81,12 +81,17 @@ public class MethodsParamertersCheck {
             resolvedOuterClass = classType.resolve();
         }
 
+        boolean first_time=true;
         for (FindVariances.Dvar dvar : findVariances.getDvarsList()) {
             if (resolvedOuterClass != null && resolvedOuterClass.equals(dvar.ownerClass)) {
                 FindVariances.Variance new_var1 = join(var, dvar.var);
                 FindVariances.Variance new_var = join(new_var1, uvar_var);
                 if (new_var != var) {
-                    suggestChange(method, parameter, new_var);
+                    if(first_time==true)
+                    {
+                        suggestChange(method, parameter, new_var);
+                        first_time=false;
+                    }
                 }
             }
         }

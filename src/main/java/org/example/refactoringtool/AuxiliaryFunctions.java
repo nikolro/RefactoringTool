@@ -195,7 +195,6 @@ public class AuxiliaryFunctions {
             }
             if (paramIndex != -1) {
                 Set<PsiMethod> methods = hierarchyMethods(method);
-                methods.add(method);
                 for (PsiMethod m : methods) {
                     PsiParameter[] params = m.getParameterList().getParameters();
                     if (paramIndex < params.length) {

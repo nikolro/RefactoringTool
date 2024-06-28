@@ -243,8 +243,19 @@ public class FindVariances {
                 boolean isExternal = isExternalLibraryClass(paramClass);
 
                 if (isExternal) {
-                    Dvar newDvar = new Dvar(null, parameter, paramClass, Variance.INVARIANT);
-                    dvars_list.add(newDvar);
+                    boolean alreadyExists = false;
+
+                    for (Dvar dvar : dvars_list) {
+                        if (dvar.ownerClass != null && dvar.ownerClass.equals(paramClass)) {
+                            alreadyExists = true;
+                            break;
+                        }
+                    }
+
+                    if (!alreadyExists) {
+                        Dvar newDvar = new Dvar(null, parameter, paramClass, Variance.INVARIANT);
+                        dvars_list.add(newDvar);
+                    }
                 }
             }
         }
