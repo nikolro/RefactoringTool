@@ -64,11 +64,9 @@ public class InfluenceGraph {
         if (type instanceof PsiClassType) {
             PsiClassType classType = (PsiClassType) type;
             PsiType[] typeArguments = classType.getParameters();
-
             // Check if the class type has any type arguments
             return typeArguments.length > 0;
         }
-        // Array types and wildcard types are not considered to have type parameters in this context
         return false;
     }
 
@@ -82,11 +80,6 @@ public class InfluenceGraph {
 
     public Set<PsiElement> getNonRewritableDeclarations() {
         return nonRewritableDeclarations;
-    }
-
-    public List<PsiElement> getElement(PsiElement element) {
-        // Return the list of elements directly influenced by the given element
-        return graph.getOrDefault(element, Collections.emptyList());
     }
 
     public List<PsiElement> getAllInfluencedElements(PsiElement element) {
@@ -122,18 +115,6 @@ public class InfluenceGraph {
             }
         }
         return influencedElements;
-    }
-
-    public List<PsiElement> getInfluencingElements(PsiElement element) {
-        List<PsiElement> influencingElements = new ArrayList<>();
-        for (Map.Entry<PsiElement, List<PsiElement>> entry : graph.entrySet()) {
-            PsiElement key = entry.getKey();
-            List<PsiElement> values = entry.getValue();
-            if (values.contains(element)) {
-                influencingElements.add(key);
-            }
-        }
-        return influencingElements;
     }
 
     public void printGraph() {

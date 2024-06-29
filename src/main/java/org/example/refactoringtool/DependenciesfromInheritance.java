@@ -22,7 +22,6 @@ public class DependenciesfromInheritance {
                 for (PsiMethod hierarchyMethod : hierarchyMethods) {
                     influenceGraph.addEdge(method, hierarchyMethod);
 
-                    // Add edges between corresponding parameters
                     PsiParameter[] methodParams = method.getParameterList().getParameters();
                     for (PsiParameter param : methodParams) {
                         Set<PsiParameter> hierarchyParams = auxiliaryFunctions.hierarchyParams(param);

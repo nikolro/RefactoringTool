@@ -1,52 +1,30 @@
-//galaxy s21 hhhh stam
+//this tests Non-rewritable Overrides the programBefore and programAfter should stay the same
+//because c in my method influence c in the overriden function addAll witch is external function
 class bechmark12 {
 
     class programBefore {
-        import java.util .*;
+        import java.util.ArrayList;
+        import java.util.Collection;
 
-        class WList<E> {
-            private List<E> elems = new LinkedList<E>();
-
-            void add(E elem) {
-                addAll(Collections.singletonList(elem));
+        class CustomList<E> extends ArrayList<E> {
+            @Override
+            public boolean addAll(Collection<? extends E> c) {
+                return true;
             }
 
-            void addAll(List<E> source) {
-                addAndLog(source.iterator(), this.elems);
-            }
-
-            private void addAndLog(Iterator<E> iterator, List<E> elems) {
-                while (iterator.hasNext()) {
-                    E elem = iterator.next();
-                    elems.add(elem);
-                    System.out.println("Added: " + elem);
-                }
-            }
         }
-
     }
 
     class programAfter {
-        import java.util .*;
+        import java.util.ArrayList;
+        import java.util.Collection;
 
-        class WList<E> {
-            private List<E> elems = new LinkedList<E>();
-
-            void add(E elem) {
-                addAll(Collections.singletonList(elem));
+        class CustomList<E> extends ArrayList<E> {
+            @Override
+            public boolean addAll(Collection<? extends E> c) {
+                return true;
             }
 
-            void addAll(List<? extends E> source) {
-                addAndLog(source.iterator(), this.elems);
-            }
-
-            private void addAndLog(Iterator<? extends E> iterator, List<? super E> elems) {
-                while (iterator.hasNext()) {
-                    E elem = iterator.next();
-                    elems.add(elem);
-                    System.out.println("Added: " + elem);
-                }
-            }
         }
     }
 

@@ -1,3 +1,4 @@
+//the implementation of the Analysis from section 4.3
 package org.example.refactoringtool;
 
 import com.intellij.psi.*;

@@ -1,3 +1,11 @@
+/*
+in the tests that check the influence flow graph, we find all the changes, apply them,
+then compare to the programAfter (check benchmark8.java and there are other tests), so you cant see when a declaration influence other
+declaration, if you want too see how out tool change the declaration that influence
+other in one click you can run the plugin as we did in the user test and paste
+the programBefore content.you can do this with all the benchmarks.
+*/
+
 package org.example.refactoringtool;
 
 import com.intellij.codeInsight.intention.IntentionAction;
@@ -28,11 +36,9 @@ public class RefactoringToolBenchmarkTests extends LightJavaCodeInsightFixtureTe
         myFixture.addClass("package java.util; public interface Iterator<T> { boolean hasNext(); T next(); }");
         myFixture.addClass("package java.util; public class ArrayList<T> implements List<T> { public boolean add(T element) { return true; } public T get(int index) { return null; } public Iterator<T> iterator() { return null; } }");
         myFixture.addClass("package java.util; public class Collections { public static <T> List<T> emptyList() { return null; } public static <T> List<T> singletonList(T o) { return null; } }");
-
-        // Add other common utility classes if needed
-        myFixture.addClass("package java.util; public class Arrays { public static <T> List<T> asList(T... a) { return null; } }");
-        // Ensure java.lang.String is available and recognized
         myFixture.addClass("package java.lang; public class String { }");
+        // Add other common utility classes
+        myFixture.addClass("package java.util; public class Arrays { public static <T> List<T> asList(T... a) { return null; } }");
     }
 
     @Test

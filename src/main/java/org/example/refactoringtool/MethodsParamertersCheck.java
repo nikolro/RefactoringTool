@@ -2,9 +2,6 @@ package org.example.refactoringtool;
 
 import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.psi.*;
-import com.intellij.psi.util.PsiTreeUtil;
-
-import java.util.ArrayList;
 import java.util.List;
 
 public class MethodsParamertersCheck {
@@ -183,7 +180,6 @@ public class MethodsParamertersCheck {
                         messageBuilder.append("\n");
                     }
                 }
-                // Remove the last comma and space
                 messageBuilder.setLength(messageBuilder.length() - 2);
                 messageBuilder.append(".");
 
@@ -195,18 +191,6 @@ public class MethodsParamertersCheck {
                 holder.registerProblem(typeElement, message, new MyQuickFix(parameter, final_var, influenced_decls));
             }
         }
-    }
-
-    // Helper method to check if a class is external
-    private boolean isExternalClass(PsiClass psiClass) {
-        if (psiClass != null) {
-            String qualifiedName = psiClass.getQualifiedName();
-            if (qualifiedName != null) {
-                // Check if the class is part of the Java standard library or other external libraries
-                return qualifiedName.startsWith("java.") || qualifiedName.startsWith("javax.");
-            }
-        }
-        return false;
     }
 
     public FindVariances.Variance join(FindVariances.Variance v1, FindVariances.Variance v2) {
@@ -228,6 +212,7 @@ public class MethodsParamertersCheck {
 
         return FindVariances.Variance.BIVARIANT;
     }
+
     public FindVariances.Variance findVar(PsiParameter parameter)
     {
         PsiType parameterType = parameter.getType();
@@ -245,7 +230,6 @@ public class MethodsParamertersCheck {
 
                 PsiClass resolvedOuterClass = null;
                 if (parameterType instanceof PsiClassType) {
-                    PsiClassType classType1 = (PsiClassType) parameterType;
                     resolvedOuterClass = classType.resolve();
                 }
                 for (FindVariances.Dvar dvar : findVariances.getDvarsList()) {

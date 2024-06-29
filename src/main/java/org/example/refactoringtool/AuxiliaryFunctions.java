@@ -4,6 +4,7 @@ package org.example.refactoringtool;
 import com.intellij.psi.*;
 import com.intellij.psi.search.searches.OverridingMethodsSearch;
 import com.intellij.util.Query;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -31,9 +32,8 @@ public class AuxiliaryFunctions {
         }
         //check if the return type uses one of the function type parameter
         if (usesTypeParameter(returnType, typeParameterNames)) {
-            returnTypeDependsOnTypeParameter=true;
-        }
-        else {
+            returnTypeDependsOnTypeParameter = true;
+        } else {
             return false;
         }
         //check if one of the function parameter uses one of the type parameter
@@ -41,11 +41,10 @@ public class AuxiliaryFunctions {
         for (PsiParameter parameter : parameters) {
             PsiType parameterType = parameter.getType();
             if (usesTypeParameter(parameterType, typeParameterNames)) {
-                oneOfParamsDependsOnTypeParameter=true;
+                oneOfParamsDependsOnTypeParameter = true;
             }
         }
-        if(oneOfParamsDependsOnTypeParameter && returnTypeDependsOnTypeParameter)
-        {
+        if (oneOfParamsDependsOnTypeParameter && returnTypeDependsOnTypeParameter) {
             return true;
         }
         return false;
@@ -73,7 +72,7 @@ public class AuxiliaryFunctions {
             return typeParameterNames.contains(type.getCanonicalText());
 
             //check if type is like T[]
-        }else if (type instanceof PsiArrayType) {
+        } else if (type instanceof PsiArrayType) {
             PsiType componentType = ((PsiArrayType) type).getComponentType();
             return usesTypeParameter(componentType, typeParameterNames);
 
@@ -186,11 +185,11 @@ public class AuxiliaryFunctions {
         Set<PsiParameter> parameters = new HashSet<>();
         PsiMethod method = (PsiMethod) parameter.getDeclarationScope();
         if (method != null) {
-            int paramIndex=-1;
+            int paramIndex = -1;
             PsiParameter[] methodParams = method.getParameterList().getParameters();
             for (int i = 0; i < methodParams.length; i++) {
                 if (methodParams[i].equals(parameter)) {
-                    paramIndex=i;
+                    paramIndex = i;
                 }
             }
             if (paramIndex != -1) {
@@ -222,7 +221,6 @@ public class AuxiliaryFunctions {
                     // N-MONOMETHOD
                     nodes.add(method);
                 }
-                // Also include the qualifier (e.g., `animals` in `animals.iterator()`)
                 PsiExpression qualifier = methodCall.getMethodExpression().getQualifierExpression();
                 if (qualifier != null) {
                     nodes.addAll(accessedNodes(qualifier));
@@ -249,7 +247,7 @@ public class AuxiliaryFunctions {
                     }
                 }
             }
-        }  else if (parent instanceof PsiReturnStatement) {
+        } else if (parent instanceof PsiReturnStatement) {
             PsiReturnStatement returnStatement = (PsiReturnStatement) parent;
             PsiExpression returnValue = returnStatement.getReturnValue();
 
@@ -257,9 +255,7 @@ public class AuxiliaryFunctions {
                 // D-RETURN
                 return enclosingMethod(returnStatement);
             }
-        }
-        else
-        {
+        } else {
             PsiElement prevSibling = expression.getPrevSibling();
             while (prevSibling instanceof PsiWhiteSpace || prevSibling instanceof PsiComment) {
                 prevSibling = prevSibling.getPrevSibling();

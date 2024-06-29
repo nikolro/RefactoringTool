@@ -1,9 +1,7 @@
 //the implementation of the Analysis from section 4.2
-
 package org.example.refactoringtool;
 
 import com.intellij.psi.*;
-import java.util.Set;
 
 public class FlowDependenciesfromQualifiers {
     private InfluenceGraph influenceGraph;
@@ -28,7 +26,6 @@ public class FlowDependenciesfromQualifiers {
                             influenceGraph.addEdge(qualifierDecl, parameter);
                         }
                     }
-
                 }
             }
         });

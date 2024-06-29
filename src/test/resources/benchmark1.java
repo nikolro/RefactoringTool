@@ -1,4 +1,4 @@
-//check methodCall with read affect on use site variance
+//check method body with read affect on use site variance
 class bechmark1 {
 
     class programBefore {

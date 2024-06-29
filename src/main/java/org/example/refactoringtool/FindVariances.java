@@ -1,8 +1,6 @@
+//find the variances and combine with the uvars
 package org.example.refactoringtool;
 
-import com.intellij.openapi.roots.ProjectFileIndex;
-import com.intellij.openapi.roots.ProjectRootManager;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
 
@@ -49,6 +47,7 @@ public class FindVariances {
             this.uvar = uvar;
         }
     }
+
     static class Uvar {
         PsiType typeExpression;
         PsiElement element;
@@ -65,25 +64,27 @@ public class FindVariances {
             return var;
         }
     }
+
     private List<Dvar> dvars_list;
     private List<Uvar> uvars_list;
     private List<Constraint> constraints_list;
     private List<PsiMethod> methods_list;
+
     public FindVariances()
     {
         dvars_list = new ArrayList<Dvar>();
         uvars_list=new ArrayList<Uvar>();
         constraints_list=new ArrayList<Constraint>();
         methods_list = new ArrayList<PsiMethod>();
-
     }
+
     public List<Dvar> getDvarsList(){
         return dvars_list ;
     }
     public List<Uvar> getUvarsList(){return uvars_list;}
 
     public void analyze(PsiElement root) {
-        // Initialize with invariance
+
         root.accept(new JavaRecursiveElementVisitor() {
             @Override
             public void visitTypeParameter(PsiTypeParameter typeParameter) {
@@ -115,15 +116,12 @@ public class FindVariances {
 
     private void processReturnType(PsiMethod method) {
         PsiType returnType = method.getReturnType();
-
         if (returnType instanceof PsiClassType) {
             PsiClassType returnClassType = (PsiClassType) returnType;
             PsiClass returnClass = returnClassType.resolve();
-
             if (returnClass instanceof PsiTypeParameter) {
                 PsiClass declaringClass = PsiTreeUtil.getParentOfType(method, PsiClass.class);
                 Dvar ownerClassDvar = findSuitableDvar(declaringClass);
-
                 Constraint newConstraint = new Constraint(ownerClassDvar, Variance.COVARIANT, null,  Variance.COVARIANT, Variance.NONE);
                 constraints_list.add(newConstraint);
             }
@@ -133,11 +131,9 @@ public class FindVariances {
     private void processParameter(PsiParameter parameter) {
         PsiClass declaringClass = PsiTreeUtil.getParentOfType(parameter, PsiClass.class);
         PsiType paramType = parameter.getType();
-
         if (paramType instanceof PsiClassType) {
             PsiClassType classType = (PsiClassType) paramType;
             PsiClass paramClass = classType.resolve();
-
             if (paramClass != null) {
                 if (isExternalLibraryClass(paramClass)) {
                     processExternalClassParameter(parameter);
@@ -146,7 +142,6 @@ public class FindVariances {
                 if (typeParameters.length == 1) {
                     PsiType typeParameter = typeParameters[0];
                     Variance variance = determineVariance(typeParameter);
-
                     if (typeParameter instanceof PsiWildcardType) {
                         processWildcardType(parameter, declaringClass, paramClass, typeParameter, variance);
                     } else if (typeParameter instanceof PsiClassType) {
@@ -160,11 +155,9 @@ public class FindVariances {
     private void processWildcardType(PsiParameter parameter, PsiClass declaringClass, PsiClass paramClass, PsiType typeParameter, Variance variance) {
         PsiWildcardType wildcardType = (PsiWildcardType) typeParameter;
         PsiType bound = wildcardType.getBound();
-
         if (bound instanceof PsiClassType) {
             PsiClassType boundClassType = (PsiClassType) bound;
             PsiClass parameterClass = boundClassType.resolve();
-
             if (parameterClass != null) {
                 Dvar left_dvar = findSuitableDvar(declaringClass);
                 Dvar right_dvar = findSuitableDvar(paramClass);
@@ -218,6 +211,7 @@ public class FindVariances {
         }
         return null;
     }
+
         private Dvar findSuitableDvar(PsiClass psiClass) {
             for (Dvar dvar : dvars_list) {
                 if (dvar.ownerClass.equals(psiClass)) {
@@ -232,20 +226,16 @@ public class FindVariances {
         if (paramType instanceof PsiClassType) {
             PsiClassType classType = (PsiClassType) paramType;
             PsiClass paramClass = classType.resolve();
-
             if (paramClass != null && !(paramClass instanceof PsiTypeParameter)) {
                 boolean isExternal = isExternalLibraryClass(paramClass);
-
                 if (isExternal) {
                     boolean alreadyExists = false;
-
                     for (Dvar dvar : dvars_list) {
                         if (dvar.ownerClass != null && dvar.ownerClass.equals(paramClass)) {
                             alreadyExists = true;
                             break;
                         }
                     }
-
                     if (!alreadyExists) {
                         Dvar newDvar = new Dvar(null, parameter, paramClass, Variance.INVARIANT);
                         dvars_list.add(newDvar);
@@ -259,14 +249,13 @@ public class FindVariances {
             if (psiClass != null) {
                 String qualifiedName = psiClass.getQualifiedName();
                 if (qualifiedName != null) {
-                    // Check if the class is part of the Java standard library
                     return qualifiedName.startsWith("java.") || qualifiedName.startsWith("javax.");
                 }
             }
             return false;
         }
 
-    public void printMap() { //TODO: delete
+    public void printMap() {
         System.out.println("****** Definition-site variances ******");
         for (Dvar dvar : dvars_list) {
             System.out.print("Class: " + dvar.ownerClass.getQualifiedName() + ", ");
@@ -291,6 +280,7 @@ public class FindVariances {
         System.out.printf("%n");
         System.out.printf("%n");
     }
+
     public Variance transform (Variance v1, Variance v2) {
         if (v1 == Variance.BIVARIANT || v2 == Variance.BIVARIANT) {
             return Variance.BIVARIANT;

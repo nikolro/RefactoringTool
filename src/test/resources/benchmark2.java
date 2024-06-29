@@ -1,4 +1,4 @@
-//check method call with read with anther class
+//check method body with read with anther class
 class bechmark2 {
 
     class programBefore {

@@ -1,36 +1,52 @@
-// you asked for 10 benchmarks we added more 5 benchmarks as matana
+//galaxy s21 hhhh stam
+//// you asked for 10 benchmarks we added more 5 benchmarks as matana
 class bechmark15 {
 
     class programBefore {
-        import java.util.*;
+        import java.util .*;
 
-        class A{
-            void foo(List<String> list) {
-                String s=list.get(0);
+        class WList<E> {
+            private List<E> elems = new LinkedList<E>();
+
+            void add(E elem) {
+                addAll(Collections.singletonList(elem));
+            }
+
+            void addAll(List<E> source) {
+                addAndLog(source.iterator(), this.elems);
+            }
+
+            private void addAndLog(Iterator<E> iterator, List<E> elems) {
+                while (iterator.hasNext()) {
+                    E elem = iterator.next();
+                    elems.add(elem);
+                    System.out.println("Added: " + elem);
+                }
             }
         }
-        class B extends A{
-            @Override
-            void foo(List<String> list1) {
-                String s="loka";
-                list1.add(s);
-            }
-        }
+
     }
 
     class programAfter {
-        import java.util.*;
+        import java.util .*;
 
-        class A{
-            void foo(List<String> list) {
-                String s=list.get(0);
+        class WList<E> {
+            private List<E> elems = new LinkedList<E>();
+
+            void add(E elem) {
+                addAll(Collections.singletonList(elem));
             }
-        }
-        class B extends A{
-            @Override
-            void foo(List<String> list1) {
-                String s="loka";
-                list1.add(s);
+
+            void addAll(List<? extends E> source) {
+                addAndLog(source.iterator(), this.elems);
+            }
+
+            private void addAndLog(Iterator<? extends E> iterator, List<? super E> elems) {
+                while (iterator.hasNext()) {
+                    E elem = iterator.next();
+                    elems.add(elem);
+                    System.out.println("Added: " + elem);
+                }
             }
         }
     }

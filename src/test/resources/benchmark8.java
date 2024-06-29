@@ -8,35 +8,35 @@ the programBefore content.
 */
 class bechmark8 {
 
-class programBefore {
-    interface C<X> {
-        void foo(D<X> arg);
-    }
-
-    interface D<Y> {
-        int getNumber();
-    }
-
-    class Client {
-        void bar(C<String> cstr, D<String> dstr) {
-            cstr.foo(dstr);
+    class programBefore {
+        interface C<X> {
+            void foo(D<X> arg);
         }
-    }
-}
 
-class programAfter {
-    interface C<X> {
-        void foo(D<?> arg);
-    }
+        interface D<Y> {
+            int getNumber();
+        }
 
-    interface D<Y> {
-        int getNumber();
-    }
-
-    class Client {
-        void bar(C<?> cstr, D<?> dstr) {
-            cstr.foo(dstr);
+        class Client {
+            void bar(C<String> cstr, D<String> dstr) {
+                cstr.foo(dstr);
+            }
         }
     }
 
-}
+    class programAfter {
+        interface C<X> {
+            void foo(D<?> arg);
+        }
+
+        interface D<Y> {
+            int getNumber();
+        }
+
+        class Client {
+            void bar(C<?> cstr, D<?> dstr) {
+                cstr.foo(dstr);
+            }
+        }
+
+    }
