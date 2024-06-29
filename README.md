@@ -1,7 +1,7 @@
 ## Technion - Israel Institute of Technology
 ## Course: 	02360651 - Advanced Topics in Software Engineering L+T
 
-## Project based on the paper: [Java Generics Refactoring Tool for Inferring Wildcards](https://yanniss.github.io/variance-oopsla14.pdf). by John Altidor and Yannis Smaragdakis
+## Project based on the paper: [Java Generics Refactoring Tool for Inferring Wildcards](https://yanniss.github.io/variance-oopsla14.pdf) by John Altidor and Yannis Smaragdakis
 
 ### Overview
 Java generics are a powerful feature that improves the safety and maintainability of code by allowing type-safe collections and eliminating the need for casts. 
