@@ -1,11 +1,3 @@
-/*
-in the tests that check the influence flow graph, we find all the changes, apply them,
-then compare to the programAfter (check benchmark8.java and there are other tests), so you cant see when a declaration influence other
-declaration, if you want too see how out tool change the declaration that influence
-other in one click you can run the plugin as we did in the user test and paste
-the programBefore content.you can do this with all the benchmarks.
-*/
-
 package org.example.refactoringtool;
 
 import com.intellij.codeInsight.intention.IntentionAction;

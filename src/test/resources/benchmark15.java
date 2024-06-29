@@ -1,5 +1,12 @@
 //galaxy s21 hhhh stam
-//// you asked for 10 benchmarks we added more 5 benchmarks as matana
+//// you asked for 10 benchmarks we added more 5 benchmarks as matana, sorry for my english :)
+/*
+we will have edge in the influence flow graph form source parameter
+to iterator paramter and  after we compute the variances according to the use site variance
+and defintion site variance as we explained in the first benchmarks.
+we get that source is covariant so we change them both to extends.
+and we cot that also elems is covariant so we change to extends.
+ */
 class bechmark15 {
 
     class programBefore {

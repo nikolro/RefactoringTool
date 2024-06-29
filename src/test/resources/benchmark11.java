@@ -1,7 +1,13 @@
-//check override with method body (witch affect the use site vaniances)
-//here the both parameters afeect each other so we need to choose the meet of variances
-//the first one is + the second - so we get 0
-//so nothing change
+/*
+we compute the variances according to the use site variance and defintion site
+variance as we explained in the previous benchmarks.
+in this bechmark method foo in class a is overrided in class b so we add edge
+between the parameters which means changin one of there variance means changing the other.
+the list in class A variance we get is covariant.
+the list in class B variance we get is contravariant.
+so pressing in one of them to change, changes the other to the variance (* meet - = -).
+so the variances doesnt change.
+ */
 class bechmark11 {
 
     class programBefore {

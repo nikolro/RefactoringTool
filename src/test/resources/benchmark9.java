@@ -1,5 +1,12 @@
-//check changing a method parameter for a overrided method, must change also the
-//corresponded parameter in the overrided method (Influence Flow Graph)
+/*
+as explained in the paper we add an edge from a parameter to its corresponding
+parameter in an overriding method. An edge in the reverse direction is also added.
+so if we change a parameter variance in function foo for example in class A
+we had also change the variance in the foo corresponding parameter in class B.
+so here we change the parameters variances for the three method in class A
+according to the use site variance and defintion site varance as we explained in the
+previos benchmarks.
+ */
 class bechmark9 {
 
     class programBefore {

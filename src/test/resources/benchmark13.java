@@ -1,4 +1,12 @@
 //mix
+/*
+in the influence flow graph we will have edge from elements to iterator after doing the analysis
+in section 4.3, so if we change the elements variance we have to change the iterator to the same
+variance.
+we compute the variances according to the use site variance and defintion site
+variance as we explained in the first benchmarks. so we get that elemets variance is covariant
+so we change also the iterator type parameter to extends.
+ */
 class bechmark13 {
 
     class programBefore {
