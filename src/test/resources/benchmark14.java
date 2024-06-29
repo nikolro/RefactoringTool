@@ -10,7 +10,7 @@ class bechmark14 {
         class B extends A{
             @Override
             void foo(List<String> animals) {
-                String s="";
+                String s="loka";
                 animals.add(s);
             }
         }
@@ -26,7 +26,7 @@ class bechmark14 {
         class B extends A{
             @Override
             void foo(List<? super String> animals) {
-                String s="";
+                String s="loka";
                 animals.add(s);
             }
         }
