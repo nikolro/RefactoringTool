@@ -3,6 +3,8 @@
 
 ## Project based on the paper: [Java Generics Refactoring Tool for Inferring Wildcards](https://yanniss.github.io/variance-oopsla14.pdf) by John Altidor and Yannis Smaragdakis
 
+https://github.com/nikolro/RefactoringTool/assets/134806793/f3b35ed7-d2e3-441a-945b-bce8f93ee1dc
+
 ### Overview
 Java generics are a powerful feature that improves the safety and maintainability of code by allowing type-safe collections and eliminating the need for casts. 
 However, generics can restrict subtyping, making it challenging to create reusable and flexible code. 
