@@ -2,6 +2,9 @@ package org.example.refactoringtool;
 
 import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.psi.*;
+import com.intellij.psi.util.PsiTreeUtil;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class MethodsParamertersCheck {
@@ -38,7 +41,7 @@ public class MethodsParamertersCheck {
             PsiType[] typeArguments = classType.getParameters();
 
             if (typeArguments.length == 0) {
-                return; // Skip if there are no type arguments
+                return;
             }
 
             PsiType typeArgument = typeArguments[0];
@@ -89,7 +92,7 @@ public class MethodsParamertersCheck {
                 if (new_var != var) {
                     if(first_time==true)
                     {
-                        suggestChange(method, parameter, new_var);
+                        suggestChange(method, parameter, new_var,var);
                         first_time=false;
                     }
                 }
@@ -106,72 +109,91 @@ public class MethodsParamertersCheck {
         return FindVariances.Variance.NONE;
     }
 
-    private void suggestChange(PsiMethod method, PsiParameter parameter, FindVariances.Variance new_var) {
+    private void suggestChange(PsiMethod method, PsiParameter parameter, FindVariances.Variance new_var,FindVariances.Variance var) {
         List<PsiElement> influenced_decls = influenceGraph.getAllInfluencedElements(parameter);
-        StringBuilder messageBuilder = new StringBuilder();
-        messageBuilder.append("Consider changing the parameter ")
-                .append(parameter.getName())
-                .append(" in method ")
-                .append(method.getName())
-                .append(" to use a more specific type with variance: ")
-                .append(new_var)
-                .append(".");
-        messageBuilder.append("\n");
-        if (!influenced_decls.isEmpty()) {
-            messageBuilder.append(" This change influences the following elements: \n");
-            for (PsiElement influencedElement : influenced_decls) {
-                if (influencedElement instanceof PsiParameter) {
-                    PsiParameter influencedParameter = (PsiParameter) influencedElement;
-                    PsiMethod influencedMethod = (PsiMethod) influencedParameter.getParent().getParent();
-                    messageBuilder.append(influencedParameter.getName())
-                            .append(" in method ")
-                            .append(influencedMethod.getName())
-                            .append(".");
-                    messageBuilder.append("\n");
-                } else if (influencedElement instanceof PsiLocalVariable) {
-                    PsiLocalVariable influencedVariable = (PsiLocalVariable) influencedElement;
-                    PsiElement scope = influencedVariable.getParent();
-                    while (scope != null && !(scope instanceof PsiMethod || scope instanceof PsiClass || scope instanceof PsiFile)) {
-                        scope = scope.getParent();
-                    }
-                    if (scope instanceof PsiMethod) {
-                        PsiMethod influencedMethod = (PsiMethod) scope;
-                        messageBuilder.append(influencedVariable.getName())
+        boolean not_rewritable=false;
+        FindVariances.Variance final_var= new_var;
+        for(PsiElement element: influenced_decls)
+        {
+            if(influenceGraph.isNonRewritable(element)==true)
+            {
+                not_rewritable=true;
+            }
+            if(influenceGraph.getInfluencedElements(element).contains(parameter)==true)
+            {
+                if(element instanceof PsiParameter){
+                FindVariances.Variance element_variance = findVar((PsiParameter) element);
+                final_var = findVariances.meet(element_variance, new_var);
+            }
+            }
+        }
+        if(not_rewritable==false && final_var!=var) {
+            StringBuilder messageBuilder = new StringBuilder();
+            messageBuilder.append("Consider changing the parameter ")
+                    .append(parameter.getName())
+                    .append(" in method ")
+                    .append(method.getName())
+                    .append(" to use a more specific type with variance: ")
+                    .append(final_var)
+                    .append(".");
+            messageBuilder.append("\n");
+            if (!influenced_decls.isEmpty()) {
+                messageBuilder.append(" This change influences the following elements: \n");
+                for (PsiElement influencedElement : influenced_decls) {
+                    if (influencedElement instanceof PsiParameter) {
+                        PsiParameter influencedParameter = (PsiParameter) influencedElement;
+                        PsiMethod influencedMethod = (PsiMethod) influencedParameter.getParent().getParent();
+                        messageBuilder.append(influencedParameter.getName())
                                 .append(" in method ")
                                 .append(influencedMethod.getName())
                                 .append(".");
                         messageBuilder.append("\n");
-                    } else if (scope instanceof PsiClass) {
-                        PsiClass influencedClass = (PsiClass) scope;
-                        messageBuilder.append(influencedVariable.getName())
+                    } else if (influencedElement instanceof PsiLocalVariable) {
+                        PsiLocalVariable influencedVariable = (PsiLocalVariable) influencedElement;
+                        PsiElement scope = influencedVariable.getParent();
+                        while (scope != null && !(scope instanceof PsiMethod || scope instanceof PsiClass || scope instanceof PsiFile)) {
+                            scope = scope.getParent();
+                        }
+                        if (scope instanceof PsiMethod) {
+                            PsiMethod influencedMethod = (PsiMethod) scope;
+                            messageBuilder.append(influencedVariable.getName())
+                                    .append(" in method ")
+                                    .append(influencedMethod.getName())
+                                    .append(".");
+                            messageBuilder.append("\n");
+                        } else if (scope instanceof PsiClass) {
+                            PsiClass influencedClass = (PsiClass) scope;
+                            messageBuilder.append(influencedVariable.getName())
+                                    .append(" in class ")
+                                    .append(influencedClass.getName())
+                                    .append(".");
+                            messageBuilder.append("\n");
+                        } else if (scope instanceof PsiFile) {
+                            messageBuilder.append(influencedVariable.getName())
+                                    .append(" in file scope.");
+                            messageBuilder.append("\n");
+                        }
+                    } else if (influencedElement instanceof PsiField) {
+                        PsiField influencedField = (PsiField) influencedElement;
+                        PsiClass influencedClass = (PsiClass) influencedField.getParent();
+                        messageBuilder.append(influencedField.getName())
                                 .append(" in class ")
                                 .append(influencedClass.getName())
                                 .append(".");
                         messageBuilder.append("\n");
-                    } else if (scope instanceof PsiFile) {
-                        messageBuilder.append(influencedVariable.getName())
-                                .append(" in file scope.");
-                        messageBuilder.append("\n");
                     }
-                } else if (influencedElement instanceof PsiField) {
-                    PsiField influencedField = (PsiField) influencedElement;
-                    PsiClass influencedClass = (PsiClass) influencedField.getParent();
-                    messageBuilder.append(influencedField.getName())
-                            .append(" in class ")
-                            .append(influencedClass.getName())
-                            .append(".");
-                    messageBuilder.append("\n");
                 }
-            }
-            // Remove the last comma and space
-            messageBuilder.setLength(messageBuilder.length() - 2);
-            messageBuilder.append(".");
-        }
+                // Remove the last comma and space
+                messageBuilder.setLength(messageBuilder.length() - 2);
+                messageBuilder.append(".");
 
-        String message = messageBuilder.toString();
-        PsiElement typeElement = parameter.getTypeElement();
-        if (typeElement != null) {
-            holder.registerProblem(typeElement, message, new MyQuickFix(parameter, new_var, influenced_decls));
+            }
+
+            String message = messageBuilder.toString();
+            PsiElement typeElement = parameter.getTypeElement();
+            if (typeElement != null) {
+                holder.registerProblem(typeElement, message, new MyQuickFix(parameter, final_var, influenced_decls));
+            }
         }
     }
 
@@ -205,6 +227,37 @@ public class MethodsParamertersCheck {
         }
 
         return FindVariances.Variance.BIVARIANT;
+    }
+    public FindVariances.Variance findVar(PsiParameter parameter)
+    {
+        PsiType parameterType = parameter.getType();
+        if (parameterType instanceof PsiClassType) {
+            PsiClassType classType = (PsiClassType) parameterType;
+            PsiType[] typeArguments = classType.getParameters();
+
+            if (typeArguments.length == 0) {
+                return FindVariances.Variance.NONE;
+            }
+            PsiType typeArgument = typeArguments[0];
+            FindVariances.Variance var = determineVariance(typeArgument);
+            if (var != FindVariances.Variance.NONE) {
+                FindVariances.Variance uvar_var = getUvarVariance(parameter);
+
+                PsiClass resolvedOuterClass = null;
+                if (parameterType instanceof PsiClassType) {
+                    PsiClassType classType1 = (PsiClassType) parameterType;
+                    resolvedOuterClass = classType.resolve();
+                }
+                for (FindVariances.Dvar dvar : findVariances.getDvarsList()) {
+                    if (resolvedOuterClass != null && resolvedOuterClass.equals(dvar.ownerClass)) {
+                        FindVariances.Variance new_var1 = join(var, dvar.var);
+                        FindVariances.Variance new_var = join(new_var1, uvar_var);
+                        return new_var;
+                    }
+                }
+            }
+        }
+        return FindVariances.Variance.NONE;
     }
 
 }

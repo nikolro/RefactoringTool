@@ -11,6 +11,10 @@ public class InfluenceGraph {
     private final Map<PsiElement,List<PsiElement>> graph;
     private final Set<PsiElement> nonRewritableDeclarations;
 
+    public Map<PsiElement, List<PsiElement>> getGraph() {
+        return graph;
+    }
+
     public InfluenceGraph() {
         graph = new HashMap<>();
         nonRewritableDeclarations=new HashSet<>();

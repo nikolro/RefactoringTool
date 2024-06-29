@@ -31,7 +31,7 @@ public class MyInspection extends AbstractBaseJavaLocalInspectionTool {
         this.analysis4_2 = new FlowDependenciesfromQualifiers(influenceGraph, auxiliaryFunctions);
         this.analysis4_3 = new ExpressionTargets(influenceGraph, auxiliaryFunctions);
         this.analysis4_4 = new DependenciesfromInheritance(influenceGraph, auxiliaryFunctions);
-        this.analysis4_6 = new NonRewritableOverrides(influenceGraph, auxiliaryFunctions);
+        this.analysis4_6 = new NonRewritableOverrides(influenceGraph);
         this.visitor = createVisitor();
         return this.visitor;
     }
@@ -44,8 +44,9 @@ public class MyInspection extends AbstractBaseJavaLocalInspectionTool {
                 analysis4_2.analyze(file);
                 analysis4_3.analyze(file);
                 analysis4_4.analyze(file);
-                //analysis4_6.analyze(file);
+                analysis4_6.analyze();
                 influenceGraph.printGraph();
+                influenceGraph.printNonRewritableDeclarations();
                 findVariances.analyze(file);
                 methodsParamertersCheck.analyze(file);
             }

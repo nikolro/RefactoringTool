@@ -1,13 +1,11 @@
-//check override and variance analysis
+//mix pro
 class bechmark10 {
 
     class programBefore {
-import java.util.List;
+        import java.util.List;
 
         class A<X> {
-            void foo(List<X> l) {
-                X firstElem = l.get(0);
-            }
+            void foo(List<X> l) {X firstElem = l.get(0);}
 
             void foo1(List<X> l) {
             }
@@ -35,7 +33,7 @@ import java.util.List;
     }
 
     class programAfter {
-import java.util.List;
+        import java.util.List;
 
         class A<X> {
             void foo(List<? extends X> l) {

@@ -27,13 +27,12 @@ public class RefactoringToolBenchmarkTests extends LightJavaCodeInsightFixtureTe
         myFixture.addClass("package java.util; public interface List<T> { boolean add(T element); T get(int index); Iterator<T> iterator(); }");
         myFixture.addClass("package java.util; public interface Iterator<T> { boolean hasNext(); T next(); }");
         myFixture.addClass("package java.util; public class ArrayList<T> implements List<T> { public boolean add(T element) { return true; } public T get(int index) { return null; } public Iterator<T> iterator() { return null; } }");
-        myFixture.addClass("package java.util; public class Collections { public static <T> List<T> emptyList() { return null; } }");
+        myFixture.addClass("package java.util; public class Collections { public static <T> List<T> emptyList() { return null; } public static <T> List<T> singletonList(T o) { return null; } }");
 
         // Add other common utility classes if needed
         myFixture.addClass("package java.util; public class Arrays { public static <T> List<T> asList(T... a) { return null; } }");
-
-        // Add mock implementations or any other classes your plugin interacts with
-        myFixture.addClass("package com.example; public class MyCustomClass { public void doSomething() {} }");
+        // Ensure java.lang.String is available and recognized
+        myFixture.addClass("package java.lang; public class String { }");
     }
 
     @Test
@@ -86,6 +85,26 @@ public class RefactoringToolBenchmarkTests extends LightJavaCodeInsightFixtureTe
         applyQuickFixesAndCompare("benchmark10.java");
     }
 
+    public void testBenchmark11() throws Exception {
+        applyQuickFixesAndCompare("benchmark11.java");
+    }
+
+    public void testBenchmark12() throws Exception {
+        applyQuickFixesAndCompare("benchmark12.java");
+    }
+
+    public void testBenchmark13() throws Exception {
+        applyQuickFixesAndCompare("benchmark13.java");
+    }
+
+    public void testBenchmark14() throws Exception {
+        applyQuickFixesAndCompare("benchmark14.java");
+    }
+
+    public void testBenchmark15() throws Exception {
+        applyQuickFixesAndCompare("benchmark15.java");
+    }
+
     public void applyQuickFixesAndCompare(@NotNull String benchmarkFileName) throws Exception {
         String filePath = getTestDataPath() + "/" + benchmarkFileName;
         String fileContent = loadFile(filePath);
@@ -94,10 +113,6 @@ public class RefactoringToolBenchmarkTests extends LightJavaCodeInsightFixtureTe
 
         VirtualFile virtualFile = myFixture.getTempDirFixture().createFile("TemporaryProgramBefore.java", programBeforeContent);
         myFixture.configureFromExistingVirtualFile(virtualFile);
-
-        System.out.println("Content of TemporaryProgramBefore.java:");
-        System.out.println(programBeforeContent);
-        System.out.println("End of TemporaryProgramBefore.java content");
 
         myFixture.enableInspections(MyInspection.class);
         myFixture.doHighlighting();

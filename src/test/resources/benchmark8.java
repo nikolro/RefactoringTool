@@ -1,14 +1,12 @@
-// Check Influence Flow Graph
+// Check Influence Flow Graph and the variances analysis
 /*
-For tests that check the influence flow graph, we find all the changes, apply them,
-and compare to the programAfter to see how our tool suggests changes to all
-the declarations that influence each other in one suggestion.
-
-You can run the plugin (refer to the user test for instructions) and paste the content of programBefore.
+in the tests that check the influence flow graph, we find all the changes, apply them,
+then compare to the programAfter, so you cant see when a declaration influence other
+declaration, if you want too see how out tool change the declaration that influence
+other in one click you can run the plugin as we did in the user test and paste
+the programBefore content.
 */
 class bechmark8 {
-
-}
 
 class programBefore {
     interface C<X> {

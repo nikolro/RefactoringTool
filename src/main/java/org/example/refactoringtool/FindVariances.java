@@ -50,12 +50,12 @@ public class FindVariances {
         }
     }
     static class Uvar {
-        PsiTypeParameter typeParameter;
+        PsiType typeExpression;
         PsiElement element;
         PsiClass ownerClass;
         Variance var;
-        public Uvar(PsiTypeParameter typeParameter, PsiElement element, PsiClass ownerClass, Variance var) {
-            this.typeParameter = typeParameter;
+        public Uvar(PsiType typeExpression, PsiElement element, PsiClass ownerClass, Variance var) {
+            this.typeExpression = typeExpression;
             this.element = element;
             this.ownerClass = ownerClass;
             this.var = var;
@@ -109,15 +109,10 @@ public class FindVariances {
             }
             processReturnType(method);
         }
-        printMap();
-        System.out.printf("%n");
-        System.out.printf("loka");
-        System.out.printf("%n");
         calculateDvarVariances();
         printMap();
     }
 
-    //its handle only if the retrun type is X
     private void processReturnType(PsiMethod method) {
         PsiType returnType = method.getReturnType();
 
@@ -135,14 +130,12 @@ public class FindVariances {
         }
     }
 
-
     private void processParameter(PsiParameter parameter) {
         PsiClass declaringClass = PsiTreeUtil.getParentOfType(parameter, PsiClass.class);
         PsiType paramType = parameter.getType();
 
         if (paramType instanceof PsiClassType) {
             PsiClassType classType = (PsiClassType) paramType;
-
             PsiClass paramClass = classType.resolve();
 
             if (paramClass != null) {
@@ -160,7 +153,6 @@ public class FindVariances {
                         processClassType(parameter, declaringClass, paramClass, typeParameter, variance);
                     }
                 }
-
             }
         }
     }
@@ -173,35 +165,37 @@ public class FindVariances {
             PsiClassType boundClassType = (PsiClassType) bound;
             PsiClass parameterClass = boundClassType.resolve();
 
-            if (parameterClass instanceof PsiTypeParameter || parameterClass instanceof PsiClass) {
-                PsiTypeParameter psiTypeParameter = (PsiTypeParameter) parameterClass;
-
+            if (parameterClass != null) {
                 Dvar left_dvar = findSuitableDvar(declaringClass);
                 Dvar right_dvar = findSuitableDvar(paramClass);
-                Uvar new_uvar = new Uvar(psiTypeParameter, parameter, paramClass, Variance.BIVARIANT);
-                FindUvar findUvar=new FindUvar(this);
+                Uvar new_uvar = new Uvar(bound, parameter, paramClass, Variance.BIVARIANT);
+                FindUvar findUvar = new FindUvar(this);
                 findUvar.analyze(new_uvar);
-                new_uvar.var=findUvar.total_variance;
+                new_uvar.var = findUvar.total_variance;
                 uvars_list.add(new_uvar);
-                Constraint new_constraint = new Constraint(left_dvar, Variance.CONTRAVARIANT, right_dvar, variance, new_uvar.getVar());
-                constraints_list.add(new_constraint);
+                if(left_dvar != null) {
+                    Constraint new_constraint = new Constraint(left_dvar, Variance.CONTRAVARIANT, right_dvar, variance, new_uvar.getVar());
+                    constraints_list.add(new_constraint);
+                }
             }
         }
     }
+
     private void processClassType(PsiParameter parameter, PsiClass declaringClass, PsiClass paramClass, PsiType typeParameter, Variance variance) {
         PsiClassType parameterClassType = (PsiClassType) typeParameter;
         PsiClass parameterClass = parameterClassType.resolve();
-        if (parameterClass instanceof PsiTypeParameter ||parameterClass instanceof PsiClass) {
-            PsiTypeParameter psiTypeParameter = (PsiTypeParameter) parameterClass;
+        if (parameterClass != null) {
             Dvar left_dvar = findSuitableDvar(declaringClass);
             Dvar right_dvar = findSuitableDvar(paramClass);
-            Uvar new_uvar = new Uvar(psiTypeParameter, parameter, paramClass, Variance.BIVARIANT);
-            FindUvar findUvar=new FindUvar(this);
+            Uvar new_uvar = new Uvar(typeParameter, parameter, paramClass, Variance.BIVARIANT);
+            FindUvar findUvar = new FindUvar(this);
             findUvar.analyze(new_uvar);
-            new_uvar.var=findUvar.total_variance;
+            new_uvar.var = findUvar.total_variance;
             uvars_list.add(new_uvar);
-            Constraint new_constraint = new Constraint(left_dvar, Variance.CONTRAVARIANT, right_dvar, variance, new_uvar.getVar());
-            constraints_list.add(new_constraint);
+            if(left_dvar != null) {
+                Constraint new_constraint = new Constraint(left_dvar, Variance.CONTRAVARIANT, right_dvar, variance, new_uvar.getVar());
+                constraints_list.add(new_constraint);
+            }
         }
     }
 
@@ -222,7 +216,7 @@ public class FindVariances {
                 return Variance.BIVARIANT;
             }
         }
-        return null; // or throw an exception if appropriate
+        return null;
     }
         private Dvar findSuitableDvar(PsiClass psiClass) {
             for (Dvar dvar : dvars_list) {
@@ -284,7 +278,7 @@ public class FindVariances {
         for (Uvar uvar : uvars_list) {
             System.out.print("Parameter name: " + uvar.element.getText()+ ", ");
             System.out.print("Class: " + uvar.ownerClass.getQualifiedName() + ", ");
-            System.out.print("Type parameter: " + uvar.typeParameter.getName() + ", ");
+            System.out.print("Type parameter: " + uvar.typeExpression + ", ");
             System.out.print("Variance: " + uvar.var.toString() + ", ");
             System.out.printf("%n");
         }
