@@ -1,5 +1,5 @@
 ### Technion - Israel Institute of Technology
-### Course: 	02360651 - Advanced Topics in Software Engineering L+T
+### Course: 	02360651 - Advanced Topics in Software Engineering L+T, Dr. Hila Peleg
 
 ## Project based on the paper: [Java Generics Refactoring Tool for Inferring Wildcards](https://yanniss.github.io/variance-oopsla14.pdf) by John Altidor and Yannis Smaragdakis
 
