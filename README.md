@@ -22,6 +22,7 @@ Note: Running each benchmark individually is possible through the file itself.
 ![image](https://github.com/nikolro/RefactoringTool/assets/134806793/10e92db9-228b-4c43-b6ba-31f865e5e0ab)
 5) Choose Run Plugin.
 6) Run Run Plugin.
+   
 This will start an IntelliJ IDEA instance where you can create a new Java project and test the plugin.
 
 
