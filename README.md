@@ -25,4 +25,5 @@ Note: Running each benchmark individually is possible through the file itself.
    
 This will start an IntelliJ IDEA instance where you can create a new Java project and test the plugin.
 
+[RefactoringTool-1.0-SNAPSHOT.zip](https://github.com/user-attachments/files/16045767/RefactoringTool-1.0-SNAPSHOT.zip)
 
