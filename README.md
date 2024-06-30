@@ -6,9 +6,7 @@
 https://github.com/nikolro/RefactoringTool/assets/134806793/71f6272f-eb3d-4faf-a2c9-de5db5a280e1
 
 ### Overview
-Java generics are a powerful feature that improves the safety and maintainability of code by allowing type-safe collections and eliminating the need for casts. 
-However, generics can restrict subtyping, making it challenging to create reusable and flexible code. 
-This project presents a practical approach to refactoring Java generics by inferring wildcard types, which helps in generalizing type signatures in a way that is both safe and efficient.
+Developing an IntelliJ IDEA plugin in Java that runs in the background while the programmer writes code. The plugin analyses Java code in real-time to suggest where wildcards can be added to improve the generality of the code.
 
 ### Instructions to Run the Benchmarks:
 1) Clone the repository to IntelliJ IDEA.
