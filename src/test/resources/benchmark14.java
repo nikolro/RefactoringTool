@@ -1,8 +1,8 @@
 //mix pro max
 /*
-same as explanation of benchmark 13.
-but we here use class that we declare as type argument ,this only affect the the variance analysis
-here we dont have defition site variance to join to the animals use site variance.
+Same explanation as benchmark 13.
+But we here use class that we declare as type argument ,this only affect the the variance analysis
+here we dont have defition site variance to join to the animals use site variance.when coputing the final variance.
  */
 class bechmark14 {
 

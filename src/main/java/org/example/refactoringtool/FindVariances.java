@@ -5,7 +5,9 @@ import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class FindVariances {
 
@@ -69,6 +71,7 @@ public class FindVariances {
     private List<Uvar> uvars_list;
     private List<Constraint> constraints_list;
     private List<PsiMethod> methods_list;
+    private Map<PsiField, Constraint> fields;
 
     public FindVariances()
     {
@@ -76,12 +79,14 @@ public class FindVariances {
         uvars_list=new ArrayList<Uvar>();
         constraints_list=new ArrayList<Constraint>();
         methods_list = new ArrayList<PsiMethod>();
+        fields=new HashMap<PsiField, Constraint>();
     }
 
     public List<Dvar> getDvarsList(){
         return dvars_list ;
     }
     public List<Uvar> getUvarsList(){return uvars_list;}
+    public Map<PsiField, Constraint> getFields(){return fields;}
 
     public void analyze(PsiElement root) {
 
@@ -95,6 +100,13 @@ public class FindVariances {
                     dvars_list.add(new Dvar(typeParameter, owner, ownerClass, Variance.BIVARIANT));
                 }
             }
+
+            @Override
+            public void visitField(PsiField field) {
+                super.visitField(field);
+                processField(field);
+            }
+
 
             @Override
             public void visitMethod(PsiMethod method) {
@@ -112,20 +124,6 @@ public class FindVariances {
         }
         calculateDvarVariances();
         printMap();
-    }
-
-    private void processReturnType(PsiMethod method) {
-        PsiType returnType = method.getReturnType();
-        if (returnType instanceof PsiClassType) {
-            PsiClassType returnClassType = (PsiClassType) returnType;
-            PsiClass returnClass = returnClassType.resolve();
-            if (returnClass instanceof PsiTypeParameter) {
-                PsiClass declaringClass = PsiTreeUtil.getParentOfType(method, PsiClass.class);
-                Dvar ownerClassDvar = findSuitableDvar(declaringClass);
-                Constraint newConstraint = new Constraint(ownerClassDvar, Variance.COVARIANT, null,  Variance.COVARIANT, Variance.NONE);
-                constraints_list.add(newConstraint);
-            }
-        }
     }
 
     private void processParameter(PsiParameter parameter) {
@@ -212,7 +210,7 @@ public class FindVariances {
         return null;
     }
 
-        private Dvar findSuitableDvar(PsiClass psiClass) {
+    private Dvar findSuitableDvar(PsiClass psiClass) {
             for (Dvar dvar : dvars_list) {
                 if (dvar.ownerClass.equals(psiClass)) {
                     return dvar;
@@ -245,7 +243,7 @@ public class FindVariances {
         }
     }
 
-        private boolean isExternalLibraryClass(PsiClass psiClass) {
+    private boolean isExternalLibraryClass(PsiClass psiClass) {
             if (psiClass != null) {
                 String qualifiedName = psiClass.getQualifiedName();
                 if (qualifiedName != null) {
@@ -254,6 +252,35 @@ public class FindVariances {
             }
             return false;
         }
+
+    private void processField(PsiField field) {
+        PsiType fieldType = field.getType();
+        if (fieldType instanceof PsiClassType) {
+            PsiClassType classType = (PsiClassType) fieldType;
+            PsiClass resolvedClass = classType.resolve();
+            if (resolvedClass != null) {
+                PsiClass containingClass = field.getContainingClass();
+                Dvar ownerClassDvar = findSuitableDvar(containingClass);
+                Constraint newConstraint = new Constraint(ownerClassDvar, Variance.BIVARIANT, null, Variance.NONE, Variance.NONE);
+                constraints_list.add(newConstraint);
+                fields.put(field, newConstraint);
+            }
+        }
+    }
+
+    private void processReturnType(PsiMethod method) {
+        PsiType returnType = method.getReturnType();
+        if (returnType instanceof PsiClassType) {
+            PsiClassType returnClassType = (PsiClassType) returnType;
+            PsiClass returnClass = returnClassType.resolve();
+            if (returnClass instanceof PsiTypeParameter) {
+                PsiClass declaringClass = PsiTreeUtil.getParentOfType(method, PsiClass.class);
+                Dvar ownerClassDvar = findSuitableDvar(declaringClass);
+                Constraint newConstraint = new Constraint(ownerClassDvar, Variance.COVARIANT, null,  Variance.NONE, Variance.NONE);
+                constraints_list.add(newConstraint);
+            }
+        }
+    }
 
     public void printMap() {
         System.out.println("****** Definition-site variances ******");
@@ -357,23 +384,28 @@ public class FindVariances {
         Variance result = Variance.BIVARIANT;
         for (Constraint constraint : constraints_list) {
             if (constraint.dvar.equals(dvar)) {
+                Variance join_dvar_wildCard;
+                Variance join_uvar;
                 Variance transfrom_result;
                 if(constraint.dependant_var!=null)
                 {
                     Variance var=constraint.dependant_var.var;
-                    Variance join_result = join (var, constraint.var_wilcard);
-                    transfrom_result = transform(constraint.var_type, join_result);
+                    join_dvar_wildCard = join (var, constraint.var_wilcard);
+                    if (constraint.uvar != Variance.NONE) {
+                        join_uvar = join (join_dvar_wildCard, constraint.uvar);
+                        transfrom_result = transform(constraint.var_type, join_uvar);
+                    }
+                    else
+                    {
+                        transfrom_result=transform(constraint.var_type, join_dvar_wildCard);
+                    }
                 }
                 else {
                     transfrom_result = constraint.var_type;
-                }
-                if (constraint.uvar != Variance.NONE) {
-                    transfrom_result = meet (transfrom_result, constraint.uvar);
                 }
                 result = meet (result, transfrom_result);
             }
         }
         return result;
     }
-
 }

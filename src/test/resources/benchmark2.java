@@ -1,15 +1,14 @@
 /*
-the definition site variance of (E,BodyTestCovar) is invariant because to compute it we need to use the definition
-site variance of (E,List) which is invariant.
-the use site of list parameter is covariant because we only read from it in the firstElm method
+The definition site variance of (E,BodyTestCovar) is CONTRAVARIANT because to compute it we need to use the definition
+site variance of (E,List) which is INVARIANT, and the use site variance of list. We computes it as descriped in the paper with constrains.
+The use site variance of list parameter is COVARIANT because we only read from it in the firstElm method
 by the method get.
-so the final variance of list is the join of its use site variance and the definition site variance of (E,List).
+The final variance of list is the join of its use site variance and the definition site variance of (E,List).
 which (+ join 0 = +) so the type parameter of List changes from E to ? extends E.
-now the the definition site variance of (Y,D) is invariant because to compute it we need to use the definition
-site variance of (E,BodyTestCovar) which is invariant.
-the use site variance of cx is bivariant becuse we dont read or write to it in the method body.
-so the final variance of cx is the join of its use site variance and the definition site variance of (E,BodyTestCovar).
-which (* join 0=*) so the type parameter of cx changes from Y to ?.
+Now the the definition site variance of (Y,D) is BIVARIANT .
+The use site variance of cx is bivariant becuse we dont read or write to it in the method body.
+So the final variance of cx is the join of its use site variance and the definition site variance of (E,BodyTestCovar).
+which (* join - = *) so the type parameter of cx changes from Y to ?.
  */
 class bechmark2 {
 

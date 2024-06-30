@@ -1,7 +1,7 @@
 /*
-as explained in the paper we add an edge from a parameter to its corresponding
+As explained in the paper we add an edge from a parameter to its corresponding
 parameter in an overriding method. An edge in the reverse direction is also added.
-so if we change a parameter variance in function foo for example in class A
+If we change a parameter variance in function foo for example in class A
 we had also change the variance in the foo corresponding parameter in class B.
 so here we change the parameters variances for the three method in class A
 according to the use site variance and defintion site varance as we explained in the

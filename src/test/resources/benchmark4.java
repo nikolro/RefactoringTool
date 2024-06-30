@@ -1,9 +1,9 @@
 /*
-the definition site variance of (E,BodyTestContravar) is invariant because to compute it we need to use the definition
-site variance of (E,List) which is invariant.
-the use site of list parameter is contravariant because we only write to it in the firstElm method
+The definition site variance of (E,BodyTestContravar) is COVARIANT because to compute it we need to use the definition
+site variance of (E,List) which is INVARIANT.and the use site variance of list. We computes it as descriped in the paper with constrains.
+the use site variance of list parameter is CONTRAVARIANT because we only write to it in the addElemTo method
 body.
-so the final variance of list is the join of its use site variance and the definition site variance of (E,List).
+The final variance of list is the join of its use site variance and the definition site variance of (E,List).
 which (- join 0 = -) so the type parameter of List changes from E to ? super E.
 */
 class bechmark4 {
@@ -12,22 +12,20 @@ class bechmark4 {
         import java.util.List;
 
         class BodyTestContravar<E> {
-            private E elem = null;
-
-            public boolean addElemTo(List<E> list) {
-                return list.add(this.elem);
+            public boolean addElemTo(List<E> list){
+                E elem = null;
+                return list.add(elem);
             }
         }
     }
 
     class programAfter {
-        import java.util.List;
+       import java.util.List;
 
         class BodyTestContravar<E> {
-            private E elem = null;
-
-            public boolean addElemTo(List<? super E> list) {
-                return list.add(this.elem);
+            public boolean addElemTo(List<? super E> list){
+                E elem = null;
+                return list.add(elem);
             }
         }
     }

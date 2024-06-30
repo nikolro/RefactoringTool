@@ -70,6 +70,15 @@ public class FindUvar {
                             if (fieldType != null && containsTypeExpression(fieldType, uvar.typeExpression)) {
                                 if (isAccessingTypeExpression(rightExpression, uvar)) {
                                     total_variance = findVariances.meet(total_variance, Variance.COVARIANT);
+                                    if (rightExpression instanceof PsiReferenceExpression) {
+                                        PsiReferenceExpression refExpr = (PsiReferenceExpression) rightExpression;
+                                        PsiElement resolvedElement = refExpr.resolve();
+                                        if (resolvedElement instanceof PsiField) {
+                                            PsiField field = (PsiField) resolvedElement;
+                                            FindVariances.Constraint constraint=findVariances.getFields().get(field);
+                                            constraint.var_type=Variance.COVARIANT;
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -79,6 +88,15 @@ public class FindUvar {
                             if (fieldType != null && containsTypeExpression(fieldType, uvar.typeExpression)) {
                                 if (isAccessingTypeExpression(leftExpression, uvar)) {
                                     total_variance = findVariances.meet(total_variance, Variance.CONTRAVARIANT);
+                                    if (leftExpression instanceof PsiReferenceExpression) {
+                                        PsiReferenceExpression refExpr = (PsiReferenceExpression) leftExpression;
+                                        PsiElement resolvedElement = refExpr.resolve();
+                                        if (resolvedElement instanceof PsiField) {
+                                            PsiField field = (PsiField) resolvedElement;
+                                            FindVariances.Constraint constraint=findVariances.getFields().get(field);
+                                            constraint.var_type=Variance.CONTRAVARIANT;
+                                        }
+                                    }
                                 }
                             }
                         }
