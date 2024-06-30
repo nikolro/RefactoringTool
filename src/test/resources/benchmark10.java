@@ -1,11 +1,11 @@
 /*
 We compute the variances according to the use site variance and defintion site
-variance as we explained in the previous benchmarks.
-In this bechmark method foo in class a is overrided in class b so we add edge
+variance as we explained in the first benchmarks.
+In this bechmark method foo in class A is overrided in class B so we add edge
 between the parameters which means changin one of their variance means changing the other.
 The list in class A variance we get is BIVARIANT.
 The list in class B variance we get is CONTRAVARIANT.
-Pressing in one of them to change, changes the other to the variance (* meet - = -).
+Pressing on one of them to change, changes the other to the variance (* meet - = -).
  */
 class bechmark10 {
 

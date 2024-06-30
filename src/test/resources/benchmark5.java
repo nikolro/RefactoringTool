@@ -1,5 +1,5 @@
 /*
-the definition site variance of (E,BodyTestInvar) is invariant because to compute it we need to use the definition
+the definition site variance of (E,BodyTestInvar) is INVARIANT because to compute it we need to use the definition
 site variance of (E,List) which is INVARIANT,and the use site variance of list. We computes it as descriped in the paper with constrains.
 The use site variance of list parameter is INVARIANT because we write and read from it in the readAndWrite method
 body.

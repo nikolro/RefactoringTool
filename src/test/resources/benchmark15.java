@@ -5,7 +5,7 @@ We will have edge in the influence flow graph form source parameter
 to iterator paramter and after we compute the variances according to the use site variance
 and defintion site variance as we explained in the first benchmarks.
 We get that source is COVARIANT so we change them both to extends.
-and we get that also elems is CONTRAVARIANT so we change to extends.
+and we get that also elems is CONTRAVARIANT so we change to super.
  */
 class bechmark15 {
 

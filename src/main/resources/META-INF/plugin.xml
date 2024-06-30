@@ -2,19 +2,21 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 
 <idea-plugin>
-
     <!-- Unique id for this plugin. Must stay constant for the life of the plugin. -->
     <id>org.example.refactoringtool</id>
 
     <!-- Text to display as name on Settings | Plugin page -->
-    <name>SDK: Comparing References Inspection Sample</name>
+    <name>SDK: Java Generics Refactoring Tool for Inferring Wildcards</name>
 
     <!-- Product and plugin compatibility requirements -->
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.java</depends>
 
     <!-- Text to display as company information on Settings | Plugin page -->
-    <vendor >Nikol and Marina</vendor>
+    <vendor>Nikol and Marina</vendor>
+
+    <!-- Version compatibility -->
+    <idea-version since-build="231" until-build="241.*"/>
 
     <!-- Inspection registration -->
     <extensions defaultExtensionNs="com.intellij">
@@ -26,5 +28,5 @@
                          enabledByDefault="true"
                          level="WARNING"
                          implementationClass="org.example.refactoringtool.MyInspection"/>
-        </extensions>
+    </extensions>
 </idea-plugin>

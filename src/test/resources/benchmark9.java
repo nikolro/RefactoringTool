@@ -5,7 +5,8 @@ If we change a parameter variance in function foo for example in class A
 we had also change the variance in the foo corresponding parameter in class B.
 so here we change the parameters variances for the three method in class A
 according to the use site variance and defintion site varance as we explained in the
-previos benchmarks.
+previos benchmarks.and in the same time the variances of the prarameters in class b changes to the smae variances.
+or we can change a parameter variance form b and the corresponding parameter in class A variance will change.
  */
 class bechmark9 {
 
