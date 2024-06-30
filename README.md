@@ -25,5 +25,15 @@ Note: Running each benchmark individually is possible through the file itself.
    
 This will start an IntelliJ IDEA instance where you can create a new Java project and test the plugin.
 
+### How to Install the RefactoringTool Plugin in IntelliJ IDEA:
+1) Download the plugin file RefactoringTool-1.0-SNAPSHOT.zip from the provided link.
+2) Launch IntelliJ IDEA on your computer.
+3) Go to File > Settings (or IntelliJ IDEA > Preferences on macOS).
+4) In the Settings/Preferences dialog, select Plugins from the left-hand side.
+5) Click on the gear icon at the top right corner of the Plugins window.
+6) Select Install Plugin from Disk....
+7) Navigate to the location where you downloaded the RefactoringTool-1.0-SNAPSHOT.zip file.
+8) Select the file and click OK.
+
 [RefactoringTool-1.0-SNAPSHOT.zip](https://github.com/user-attachments/files/16045767/RefactoringTool-1.0-SNAPSHOT.zip)
 
