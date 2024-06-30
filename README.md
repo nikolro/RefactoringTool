@@ -3,7 +3,7 @@
 
 ## Project based on the paper: [Java Generics Refactoring Tool for Inferring Wildcards](https://yanniss.github.io/variance-oopsla14.pdf) by John Altidor and Yannis Smaragdakis
 
-https://github.com/nikolro/RefactoringTool/assets/134806793/71f6272f-eb3d-4faf-a2c9-de5db5a280e1
+https://github.com/nikolro/RefactoringTool/assets/134806793/a2d00eb6-67a8-4d89-9313-c1e5af1bd93f
 
 ### Overview
 Developing an IntelliJ IDEA plugin in Java that runs in the background while the programmer writes code. The plugin analyses Java code in real-time to suggest where wildcards can be added to improve the generality of the code.
